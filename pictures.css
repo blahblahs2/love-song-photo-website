@@ -1,0 +1,281 @@
+.page-header {
+  background: linear-gradient(135deg, #fce4ec 0%, #f3e5f5 100%);
+  padding: 120px 0 80px;
+  text-align: center;
+}
+
+.page-header h1 {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.page-header p {
+  font-size: 1.2rem;
+  color: #666;
+  margin-bottom: 2rem;
+}
+
+.upload-btn {
+  background: linear-gradient(135deg, #e91e63, #9c27b0);
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: transform 0.3s;
+}
+
+.upload-btn:hover {
+  transform: scale(1.05);
+}
+
+.upload-section {
+  padding: 40px 0;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.upload-form {
+  background: white;
+  border-radius: 15px;
+  padding: 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.upload-form h3 {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  color: #333;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #e91e63;
+}
+
+.form-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.submit-btn {
+  flex: 1;
+  background: linear-gradient(135deg, #e91e63, #9c27b0);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.cancel-btn {
+  flex: 1;
+  background: #f5f5f5;
+  color: #333;
+  border: 2px solid #e0e0e0;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.gallery-section {
+  padding: 80px 0;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.photo-item {
+  background: white;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
+  cursor: pointer;
+}
+
+.photo-item:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.photo-image {
+  width: 100%;
+  height: 250px;
+  background: linear-gradient(135deg, #ffb3d9, #d1c4e9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.photo-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-image i {
+  font-size: 3rem;
+  color: white;
+}
+
+.photo-info {
+  padding: 1.5rem;
+}
+
+.photo-info h3 {
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.photo-info p {
+  color: #666;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.photo-details {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: #999;
+}
+
+.photo-details span {
+  display: flex;
+  align-items: center;
+}
+
+.photo-details i {
+  margin-right: 0.5rem;
+}
+
+.photo-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 15px;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow: auto;
+  position: relative;
+}
+
+.close-modal {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  font-size: 2rem;
+  color: #999;
+  cursor: pointer;
+  z-index: 2001;
+}
+
+.close-modal:hover {
+  color: #333;
+}
+
+#modal-image {
+  width: 100%;
+  max-height: 500px;
+  object-fit: cover;
+  border-radius: 15px 15px 0 0;
+}
+
+.modal-info {
+  padding: 2rem;
+}
+
+.modal-info h3 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.modal-info p {
+  color: #666;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.modal-details {
+  display: flex;
+  gap: 2rem;
+  color: #999;
+}
+
+.nav-link.active {
+  color: #ffb3d9 !important;
+  font-weight: bold;
+}
+
+@media (max-width: 768px) {
+  .page-header h1 {
+    font-size: 2.5rem;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .gallery-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-buttons {
+    flex-direction: column;
+  }
+}

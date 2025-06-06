@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Best Memories</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-heart"></i>
+                <span>Our Best Memories</span>
+            </div>
+            <div class="nav-menu" id="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="about-us.html" class="nav-link">About Us</a>
+                <a href="our-pictures.html" class="nav-link">Our Pictures</a>
+                <a href="explore-us.html" class="nav-link">Explore Us</a>
+                <a href="admin.html" class="nav-link">Admin</a>
+            </div>
+            <div class="nav-toggle" id="nav-toggle">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <i class="fas fa-heart hero-icon"></i>
+            <h1>Our Best Memories</h1>
+            <p>A beautiful collection of our favorite moments and songs</p>
+        </div>
+    </section>
+
+    <!-- Songs Grid Section -->
+    <section class="songs-section">
+        <div class="container">
+            <h2>Choose Your Favorite Song</h2>
+            <div class="songs-grid">
+                <div class="song-card" data-song="forever">
+                    <div class="song-icon">
+                        <i class="fas fa-music"></i>
+                    </div>
+                    <h3>Our Forever</h3>
+                    <p>The song that represents our eternal love</p>
+                    <button class="play-btn" onclick="playSong('forever')">
+                        <i class="fas fa-play"></i> Play Song
+                    </button>
+                </div>
+
+                <div class="song-card" data-song="memories">
+                    <div class="song-icon">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <h3>Beautiful Memories</h3>
+                    <p>A song about all our special moments</p>
+                    <button class="play-btn" onclick="playSong('memories')">
+                        <i class="fas fa-play"></i> Play Song
+                    </button>
+                </div>
+
+                <div class="song-card" data-song="journey">
+                    <div class="song-icon">
+                        <i class="fas fa-road"></i>
+                    </div>
+                    <h3>Our Journey</h3>
+                    <p>The story of how we found each other</p>
+                    <button class="play-btn" onclick="playSong('journey')">
+                        <i class="fas fa-play"></i> Play Song
+                    </button>
+                </div>
+
+                <div class="song-card" data-song="dreams">
+                    <div class="song-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <h3>Shared Dreams</h3>
+                    <p>About our hopes and future together</p>
+                    <button class="play-btn" onclick="playSong('dreams')">
+                        <i class="fas fa-play"></i> Play Song
+                    </button>
+                </div>
+
+                <div class="song-card" data-song="laughter">
+                    <div class="song-icon">
+                        <i class="fas fa-smile"></i>
+                    </div>
+                    <h3>Endless Laughter</h3>
+                    <p>Celebrating all our joyful moments</p>
+                    <button class="play-btn" onclick="playSong('laughter')">
+                        <i class="fas fa-play"></i> Play Song
+                    </button>
+                </div>
+
+                <div class="song-card" data-song="together">
+                    <div class="song-icon">
+                        <i class="fas fa-hands-holding-heart"></i>
+                    </div>
+                    <h3>Always Together</h3>
+                    <p>A promise to never let go</p>
+                    <button class="play-btn" onclick="playSong('together')">
+                        <i class="fas fa-play"></i> Play Song
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Song Display Section -->
+    <section class="song-display" id="song-display" style="display: none;">
+        <div class="container">
+            <div class="song-player">
+                <div class="player-header">
+                    <h3 id="current-song-title">Song Title</h3>
+                    <button class="close-btn" onclick="closeSong()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="player-controls">
+                    <button id="play-pause-btn" onclick="togglePlayPause()">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <span id="song-status">Ready to play</span>
+                </div>
+                <div class="lyrics-container">
+                    <div id="song-lyrics"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Photos Preview -->
+    <section class="photos-preview">
+        <div class="container">
+            <h2>Our Beautiful Memories</h2>
+            <div class="photos-grid">
+                <div class="photo-card">
+                    <div class="photo-placeholder">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <h4>First Date</h4>
+                </div>
+                <div class="photo-card">
+                    <div class="photo-placeholder">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <h4>Beach Day</h4>
+                </div>
+                <div class="photo-card">
+                    <div class="photo-placeholder">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <h4>Anniversary</h4>
+                </div>
+            </div>
+            <a href="our-pictures.html" class="view-all-btn">View All Our Pictures</a>
+        </div>
+    </section>
+
+    <script src="script.js"></script>
+</body>
+</html>

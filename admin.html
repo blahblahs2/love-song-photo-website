@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Our Best Memories</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="admin.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-heart"></i>
+                <span>Our Best Memories</span>
+            </div>
+            <div class="nav-menu" id="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="about-us.html" class="nav-link">About Us</a>
+                <a href="our-pictures.html" class="nav-link">Our Pictures</a>
+                <a href="explore-us.html" class="nav-link">Explore Us</a>
+                <a href="admin.html" class="nav-link active">Admin</a>
+            </div>
+            <div class="nav-toggle" id="nav-toggle">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <section class="page-header">
+        <div class="container">
+            <h1>Photo Approval Center</h1>
+            <p>Review and approve photos for the gallery</p>
+        </div>
+    </section>
+
+    <!-- Pending Photos -->
+    <section class="admin-section">
+        <div class="container">
+            <div id="pending-photos-container">
+                <!-- Pending photos will be loaded here -->
+            </div>
+        </div>
+    </section>
+
+    <script src="script.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>

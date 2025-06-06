@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Pictures - Our Best Memories</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="pictures.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-heart"></i>
+                <span>Our Best Memories</span>
+            </div>
+            <div class="nav-menu" id="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="about-us.html" class="nav-link">About Us</a>
+                <a href="our-pictures.html" class="nav-link active">Our Pictures</a>
+                <a href="explore-us.html" class="nav-link">Explore Us</a>
+                <a href="admin.html" class="nav-link">Admin</a>
+            </div>
+            <div class="nav-toggle" id="nav-toggle">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <section class="page-header">
+        <div class="container">
+            <h1>Our Picture Gallery</h1>
+            <p>Every picture tells a story of our best memories</p>
+            <button class="upload-btn" onclick="showUploadForm()">
+                <i class="fas fa-upload"></i> Add New Photo
+            </button>
+        </div>
+    </section>
+
+    <!-- Upload Form -->
+    <section class="upload-section" id="upload-section" style="display: none;">
+        <div class="container">
+            <div class="upload-form">
+                <h3>Upload New Photo</h3>
+                <form id="photo-upload-form">
+                    <div class="form-group">
+                        <label for="photo">Photo</label>
+                        <input type="file" id="photo" name="photo" accept="image/*" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="title">Title</label>
+                        <input type="text" id="title" name="title" placeholder="Give your photo a beautiful title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea id="description" name="description" placeholder="Tell the story behind this photo" rows="3"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="date">Date</label>
+                            <input type="date" id="date" name="date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="location">Location</label>
+                            <input type="text" id="location" name="location" placeholder="Where was this taken?">
+                        </div>
+                    </div>
+                    <div class="form-buttons">
+                        <button type="submit" class="submit-btn">Upload Photo</button>
+                        <button type="button" class="cancel-btn" onclick="hideUploadForm()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Photo Gallery -->
+    <section class="gallery-section">
+        <div class="container">
+            <div class="gallery-grid" id="gallery-grid">
+                <!-- Photos will be loaded here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Photo Modal -->
+    <div class="photo-modal" id="photo-modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <img id="modal-image" src="/placeholder.svg" alt="">
+            <div class="modal-info">
+                <h3 id="modal-title"></h3>
+                <p id="modal-description"></p>
+                <div class="modal-details">
+                    <span id="modal-date"></span>
+                    <span id="modal-location"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="pictures.js"></script>
+</body>
+</html>
