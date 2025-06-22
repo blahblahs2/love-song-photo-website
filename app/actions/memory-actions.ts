@@ -45,24 +45,28 @@ export async function addMemoryAction(formData: FormData) {
     const description = formData.get("description") as string
     const emoji = formData.get("emoji") as string
     const gradient = formData.get("gradient") as string
-    const displayOrder = Number.parseInt(formData.get("displayOrder") as string) || 0
+    const displayOrder = formData.get("displayOrder") as string
 
+    // Validate required fields
     if (!title || !description || !emoji || !gradient) {
-      throw new Error("Missing required fields")
+      throw new Error("Title, description, emoji, and gradient are required")
     }
 
+    // Create new memory object
     const newMemory = {
-      title,
-      description,
-      emoji,
-      gradient,
-      display_order: displayOrder,
+      title: title.trim(),
+      description: description.trim(),
+      emoji: emoji.trim(),
+      gradient: gradient.trim(),
+      display_order: Number.parseInt(displayOrder) || 0,
     }
 
+    // Add to database
     const savedMemory = await addMemoryToDB(newMemory)
 
-    revalidatePath("/")
+    // Revalidate all relevant pages
     revalidatePath("/admin")
+    revalidatePath("/")
 
     return {
       success: true,
@@ -86,27 +90,43 @@ export async function updateMemoryAction(id: number, formData: FormData) {
     const description = formData.get("description") as string
     const emoji = formData.get("emoji") as string
     const gradient = formData.get("gradient") as string
-    const displayOrder = Number.parseInt(formData.get("displayOrder") as string) || 0
+    const displayOrder = formData.get("displayOrder") as string
 
-    const updateData: any = {}
-    if (title) updateData.title = title
-    if (description) updateData.description = description
-    if (emoji) updateData.emoji = emoji
-    if (gradient) updateData.gradient = gradient
-    if (displayOrder !== undefined) updateData.display_order = displayOrder
+    // Validate required fields
+    if (!title || !description || !emoji || !gradient) {
+      throw new Error("Title, description, emoji, and gradient are required")
+    }
 
+    // Create update object
+    const updateData = {
+      title: title.trim(),
+      description: description.trim(),
+      emoji: emoji.trim(),
+      gradient: gradient.trim(),
+      display_order: Number.parseInt(displayOrder) || 0,
+    }
+
+    // Update in database
     const updatedMemory = await updateMemoryInDB(id, updateData)
 
-    if (updatedMemory) {
-      revalidatePath("/")
-      revalidatePath("/admin")
-
-      return { success: true, message: "Memory updated successfully!" }
+    if (!updatedMemory) {
+      throw new Error("Memory not found")
     }
-    return { success: false, message: "Memory not found" }
+
+    // Revalidate all relevant pages
+    revalidatePath("/admin")
+    revalidatePath("/")
+
+    return {
+      success: true,
+      message: "Memory updated successfully!",
+    }
   } catch (error) {
-    console.error("Error updating memory:", error)
-    return { success: false, message: "Failed to update memory" }
+    console.error("Update memory failed:", error)
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to update memory",
+    }
   }
 }
 
@@ -115,8 +135,9 @@ export async function deleteMemoryAction(id: number) {
     await ensureDbInitialized()
     const success = await deleteMemoryFromDB(id)
     if (success) {
-      revalidatePath("/")
+      // Revalidate all pages that show memories
       revalidatePath("/admin")
+      revalidatePath("/")
 
       return { success: true, message: "Memory deleted successfully!" }
     }
