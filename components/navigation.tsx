@@ -31,10 +31,6 @@ export default function Navigation() {
               <Heart className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" />
               Home
             </Link>
-            <Link href="/about-us" className="hover:text-blue-200 transition-all duration-300 flex items-center group">
-              <Users className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" />
-              About Us
-            </Link>
             <Link
               href="/our-pictures"
               className="hover:text-blue-200 transition-all duration-300 flex items-center group"
@@ -45,9 +41,6 @@ export default function Navigation() {
             <Link href="/songs" className="hover:text-blue-200 transition-all duration-300 flex items-center group">
               <Music className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" />
               Songs
-            </Link>
-            <Link href="/explore-us" className="hover:text-blue-200 transition-all duration-300">
-              Explore Us
             </Link>
             <Link
               href="/admin"
@@ -79,15 +72,6 @@ export default function Navigation() {
                 </div>
               </Link>
               <Link
-                href="/about-us"
-                className="block hover:text-blue-200 transition-colors py-2 px-2 rounded hover:bg-white/10"
-              >
-                <div className="flex items-center">
-                  <Users className="h-4 w-4 mr-2" />
-                  About Us
-                </div>
-              </Link>
-              <Link
                 href="/our-pictures"
                 className="block hover:text-blue-200 transition-colors py-2 px-2 rounded hover:bg-white/10"
               >
@@ -104,12 +88,6 @@ export default function Navigation() {
                   <Music className="h-4 w-4 mr-2" />
                   Songs
                 </div>
-              </Link>
-              <Link
-                href="/explore-us"
-                className="block hover:text-blue-200 transition-colors py-2 px-2 rounded hover:bg-white/10"
-              >
-                Explore Us
               </Link>
               <Link
                 href="/admin"
