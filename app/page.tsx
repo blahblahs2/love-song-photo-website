@@ -1,6 +1,6 @@
 import { getApprovedPhotosAction } from "@/app/actions/photo-actions"
 import { getApprovedSongsAction } from "@/app/actions/song-actions"
-import { Users, Camera, Music, Star, Heart, Zap, Coffee, Gamepad2 } from "lucide-react"
+import { Users, Camera, Music, Star, Heart, Zap, Coffee, Gamepad2, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import Link from "next/link"
@@ -19,52 +19,93 @@ export default async function HomePage() {
   ]
 
   const stats = [
-    { icon: Users, label: "Squad Members", value: "8", color: "text-purple-600" },
-    { icon: Camera, label: "Memories Captured", value: photos.length.toString(), color: "text-pink-600" },
-    { icon: Music, label: "Songs in Playlist", value: songs.length.toString(), color: "text-orange-600" },
-    { icon: Coffee, label: "Coffee Dates", value: "∞", color: "text-amber-600" },
+    { icon: Users, label: "Squad Members", value: "8", color: "text-blue-600", bg: "bg-blue-100" },
+    {
+      icon: Camera,
+      label: "Memories Captured",
+      value: photos.length.toString(),
+      color: "text-indigo-600",
+      bg: "bg-indigo-100",
+    },
+    {
+      icon: Music,
+      label: "Songs in Playlist",
+      value: songs.length.toString(),
+      color: "text-cyan-600",
+      bg: "bg-cyan-100",
+    },
+    { icon: Coffee, label: "Coffee Dates", value: "∞", color: "text-sky-600", bg: "bg-sky-100" },
   ]
 
   const recentActivities = [
-    { icon: Camera, activity: "Beach Trip Photos", time: "2 days ago", color: "bg-blue-500" },
-    { icon: Music, activity: "New Song Added", time: "1 week ago", color: "bg-purple-500" },
-    { icon: Gamepad2, activity: "Game Night Pics", time: "2 weeks ago", color: "bg-green-500" },
-    { icon: Coffee, activity: "Cafe Hangout", time: "3 weeks ago", color: "bg-amber-500" },
+    {
+      icon: Camera,
+      activity: "Beach Trip Photos",
+      time: "2 days ago",
+      color: "bg-gradient-to-r from-blue-500 to-cyan-500",
+    },
+    {
+      icon: Music,
+      activity: "New Song Added",
+      time: "1 week ago",
+      color: "bg-gradient-to-r from-indigo-500 to-blue-500",
+    },
+    {
+      icon: Gamepad2,
+      activity: "Game Night Pics",
+      time: "2 weeks ago",
+      color: "bg-gradient-to-r from-cyan-500 to-teal-500",
+    },
+    { icon: Coffee, activity: "Cafe Hangout", time: "3 weeks ago", color: "bg-gradient-to-r from-sky-500 to-blue-500" },
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-orange-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50">
       {/* Hero Section */}
       <section className="relative py-20 px-4 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 to-pink-600/10"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-indigo-600/10"></div>
+        <div className="absolute inset-0">
+          <div className="absolute top-20 left-10 w-20 h-20 bg-blue-200/30 rounded-full blur-xl"></div>
+          <div className="absolute top-40 right-20 w-32 h-32 bg-indigo-200/30 rounded-full blur-xl"></div>
+          <div className="absolute bottom-20 left-1/3 w-24 h-24 bg-cyan-200/30 rounded-full blur-xl"></div>
+        </div>
+
         <div className="max-w-6xl mx-auto text-center relative z-10">
-          <div className="flex justify-center mb-6">
+          <div className="flex justify-center mb-8">
             <div className="relative">
-              <Users className="h-20 w-20 text-purple-600 animate-bounce" />
-              <Heart className="h-8 w-8 text-pink-500 absolute -top-2 -right-2 animate-pulse" />
+              <div className="w-24 h-24 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-2xl">
+                <Users className="h-12 w-12 text-white animate-pulse" />
+              </div>
+              <Heart className="h-8 w-8 text-red-500 absolute -top-2 -right-2 animate-bounce" />
+              <Star className="h-6 w-6 text-yellow-400 absolute -bottom-1 -left-2 animate-spin" />
+              <Sparkles className="h-5 w-5 text-blue-400 absolute top-2 -left-3 animate-pulse" />
             </div>
           </div>
-          <h1 className="text-6xl md:text-8xl font-bold bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 bg-clip-text text-transparent mb-6">
-            Our Squad
+
+          <h1 className="text-6xl md:text-8xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600 bg-clip-text text-transparent mb-6 drop-shadow-sm">
+            The Friend Group
           </h1>
-          <div className="h-16 flex items-center justify-center">
-            <p className="text-2xl text-gray-700">
-              {friendQuotes[0]} {/* Show first quote or rotate on client if needed */}
-            </p>
+
+          <div className="h-16 flex items-center justify-center mb-8">
+            <p className="text-2xl text-gray-700 font-medium">{friendQuotes[0]}</p>
           </div>
 
           {/* Quick Actions */}
-          <div className="flex flex-wrap justify-center gap-4 mt-8">
+          <div className="flex flex-wrap justify-center gap-6 mt-8">
             <Button
               asChild
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+              className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 px-8 py-3 text-lg"
             >
               <Link href="/songs">
                 <Music className="h-5 w-5 mr-2" />
                 Listen to Our Playlist
               </Link>
             </Button>
-            <Button asChild variant="outline" className="border-2 border-purple-500 text-purple-600 hover:bg-purple-50">
+            <Button
+              asChild
+              variant="outline"
+              className="border-2 border-blue-500 text-blue-600 hover:bg-blue-50 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 px-8 py-3 text-lg"
+            >
               <Link href="/our-pictures">
                 <Camera className="h-5 w-5 mr-2" />
                 View Memories
@@ -75,16 +116,25 @@ export default async function HomePage() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 px-4">
+      <section className="py-20 px-4">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-12 text-gray-800">Squad Stats</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <h2 className="text-5xl font-bold text-center mb-16 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            Squad Stats
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((stat, index) => (
-              <Card key={index} className="text-center hover:shadow-lg transition-shadow bg-white/80 backdrop-blur-sm">
-                <CardContent className="p-6">
-                  <stat.icon className={`h-12 w-12 mx-auto mb-4 ${stat.color}`} />
-                  <div className="text-3xl font-bold text-gray-800 mb-2">{stat.value}</div>
-                  <div className="text-gray-600">{stat.label}</div>
+              <Card
+                key={index}
+                className="text-center hover:shadow-2xl transition-all duration-300 transform hover:scale-105 bg-white/80 backdrop-blur-sm border-0 shadow-lg"
+              >
+                <CardContent className="p-8">
+                  <div
+                    className={`w-16 h-16 ${stat.bg} rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg`}
+                  >
+                    <stat.icon className={`h-8 w-8 ${stat.color}`} />
+                  </div>
+                  <div className="text-4xl font-bold text-gray-800 mb-3">{stat.value}</div>
+                  <div className="text-gray-600 font-medium">{stat.label}</div>
                 </CardContent>
               </Card>
             ))}
@@ -93,22 +143,27 @@ export default async function HomePage() {
       </section>
 
       {/* Recent Activities */}
-      <section className="py-16 px-4 bg-white/50">
+      <section className="py-20 px-4 bg-white/30 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-12 text-gray-800">Recent Squad Activities</h2>
-          <div className="space-y-4">
+          <h2 className="text-5xl font-bold text-center mb-16 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            Recent Squad Activities
+          </h2>
+          <div className="space-y-6">
             {recentActivities.map((activity, index) => (
-              <Card key={index} className="hover:shadow-lg transition-all hover:scale-105 bg-white/80 backdrop-blur-sm">
-                <CardContent className="p-6">
-                  <div className="flex items-center space-x-4">
-                    <div className={`p-3 rounded-full ${activity.color}`}>
-                      <activity.icon className="h-6 w-6 text-white" />
+              <Card
+                key={index}
+                className="hover:shadow-2xl transition-all duration-300 transform hover:scale-102 bg-white/90 backdrop-blur-sm border-0 shadow-lg"
+              >
+                <CardContent className="p-8">
+                  <div className="flex items-center space-x-6">
+                    <div className={`p-4 rounded-2xl ${activity.color} shadow-lg`}>
+                      <activity.icon className="h-8 w-8 text-white" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-800">{activity.activity}</h3>
-                      <p className="text-gray-600">{activity.time}</p>
+                      <h3 className="text-xl font-bold text-gray-800 mb-1">{activity.activity}</h3>
+                      <p className="text-gray-600 font-medium">{activity.time}</p>
                     </div>
-                    <Zap className="h-5 w-5 text-yellow-500" />
+                    <Zap className="h-6 w-6 text-yellow-500 animate-pulse" />
                   </div>
                 </CardContent>
               </Card>
@@ -118,44 +173,57 @@ export default async function HomePage() {
       </section>
 
       {/* Featured Memories Preview */}
-      <section className="py-16 px-4">
+      <section className="py-20 px-4">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-12 text-gray-800">Latest Squad Memories</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <h2 className="text-5xl font-bold text-center mb-16 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            Latest Squad Memories
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             {[
               {
                 title: "Beach Day Chaos",
                 desc: "When we tried to build a sandcastle but ended up in a sand fight",
                 emoji: "🏖️",
+                gradient: "from-blue-400 to-cyan-500",
               },
-              { title: "Game Night Madness", desc: "The night Sarah flipped the Monopoly board", emoji: "🎮" },
+              {
+                title: "Game Night Madness",
+                desc: "The night Sarah flipped the Monopoly board",
+                emoji: "🎮",
+                gradient: "from-indigo-400 to-blue-500",
+              },
               {
                 title: "Coffee Shop Takeover",
                 desc: "We literally stayed for 6 hours and they had to kick us out",
                 emoji: "☕",
+                gradient: "from-cyan-400 to-teal-500",
               },
             ].map((memory, index) => (
               <Card
                 key={index}
-                className="overflow-hidden hover:shadow-xl transition-all hover:scale-105 bg-gradient-to-br from-white to-purple-50"
+                className="overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:scale-105 bg-gradient-to-br from-white to-blue-50 border-0 shadow-lg"
               >
-                <CardContent className="p-6 text-center">
-                  <div className="text-6xl mb-4">{memory.emoji}</div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-3">{memory.title}</h3>
-                  <p className="text-gray-600 mb-4">{memory.desc}</p>
-                  <div className="flex justify-center space-x-2">
+                <CardContent className="p-8 text-center">
+                  <div
+                    className={`w-20 h-20 bg-gradient-to-r ${memory.gradient} rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg`}
+                  >
+                    <span className="text-4xl">{memory.emoji}</span>
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-4">{memory.title}</h3>
+                  <p className="text-gray-600 mb-6 leading-relaxed">{memory.desc}</p>
+                  <div className="flex justify-center space-x-1">
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
+                      <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
                     ))}
                   </div>
                 </CardContent>
               </Card>
             ))}
           </div>
-          <div className="text-center mt-8">
+          <div className="text-center mt-12">
             <Button
               asChild
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+              className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 px-8 py-3 text-lg"
             >
               <Link href="/our-pictures">
                 <Camera className="h-5 w-5 mr-2" />
@@ -167,18 +235,33 @@ export default async function HomePage() {
       </section>
 
       {/* Call to Action */}
-      <section className="py-16 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-bold mb-6">Ready to Add More Memories?</h2>
-          <p className="text-xl mb-8 opacity-90">Upload your photos, add songs, and keep our squad story growing!</p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Button asChild className="bg-white text-purple-600 hover:bg-gray-100">
+      <section className="py-20 px-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600 text-white relative overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute top-10 left-10 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
+          <div className="absolute bottom-10 right-10 w-40 h-40 bg-white/10 rounded-full blur-xl"></div>
+          <div className="absolute top-1/2 left-1/3 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+        </div>
+
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          <h2 className="text-5xl font-bold mb-8">Ready to Add More Memories?</h2>
+          <p className="text-xl mb-12 opacity-90 leading-relaxed">
+            Upload your photos, add songs, and keep our squad story growing!
+          </p>
+          <div className="flex flex-wrap justify-center gap-6">
+            <Button
+              asChild
+              className="bg-white text-blue-600 hover:bg-blue-50 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 px-8 py-3 text-lg font-semibold"
+            >
               <Link href="/our-pictures">
                 <Camera className="h-5 w-5 mr-2" />
                 Upload Photos
               </Link>
             </Button>
-            <Button asChild variant="outline" className="border-white text-white hover:bg-white hover:text-purple-600">
+            <Button
+              asChild
+              variant="outline"
+              className="border-2 border-white text-white hover:bg-white hover:text-blue-600 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 px-8 py-3 text-lg font-semibold"
+            >
               <Link href="/songs">
                 <Music className="h-5 w-5 mr-2" />
                 Add Songs
