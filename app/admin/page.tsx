@@ -771,6 +771,155 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* Members Tab Content */}
+        {activeTab === "members" && (
+          <div className="space-y-6">
+            {/* Add Member Button */}
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-800">Squad Members</h2>
+              <Button
+                onClick={() => {
+                  resetMemberForm()
+                  setShowMemberForm(true)
+                }}
+                className="bg-gradient-to-r from-blue-500 to-cyan-500"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Member
+              </Button>
+            </div>
+
+            {/* Member Form */}
+            {showMemberForm && (
+              <Card className="bg-white/90 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle>{editingMember ? "Edit Member" : "Add New Member"}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleMemberSubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">
+                          Name <span className="text-red-500">*</span>
+                        </label>
+                        <Input
+                          value={memberForm.name}
+                          onChange={(e) => setMemberForm({ ...memberForm, name: e.target.value })}
+                          placeholder="Enter full name"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Nickname</label>
+                        <Input
+                          value={memberForm.nickname}
+                          onChange={(e) => setMemberForm({ ...memberForm, nickname: e.target.value })}
+                          placeholder="Enter nickname (optional)"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Role</label>
+                      <select
+                        value={memberForm.role}
+                        onChange={(e) => setMemberForm({ ...memberForm, role: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      >
+                        <option value="Member">Member</option>
+                        <option value="Admin">Admin</option>
+                        <option value="Moderator">Moderator</option>
+                        <option value="Photographer">Photographer</option>
+                        <option value="DJ">DJ</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Bio</label>
+                      <Textarea
+                        value={memberForm.bio}
+                        onChange={(e) => setMemberForm({ ...memberForm, bio: e.target.value })}
+                        placeholder="Tell us about this squad member..."
+                        rows={3}
+                      />
+                    </div>
+                    <div className="flex gap-4">
+                      <Button type="submit" disabled={loading} className="bg-gradient-to-r from-blue-500 to-cyan-500">
+                        {loading ? "Saving..." : editingMember ? "Update Member" : "Add Member"}
+                      </Button>
+                      <Button type="button" variant="outline" onClick={resetMemberForm}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Members List */}
+            {loading ? (
+              <div className="text-center py-20">
+                <Clock className="h-12 w-12 animate-spin mx-auto text-purple-500 mb-4" />
+                <p className="text-lg text-gray-600">Loading members...</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {members.map((member) => (
+                  <Card key={member.id} className="bg-white/90 backdrop-blur-sm">
+                    <CardContent className="p-6">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-800">{member.name}</h3>
+                          {member.nickname && <p className="text-gray-600">"{member.nickname}"</p>}
+                        </div>
+                        <Badge variant="secondary">{member.role}</Badge>
+                      </div>
+
+                      {member.bio && <p className="text-gray-600 text-sm mb-4 line-clamp-3">{member.bio}</p>}
+
+                      <div className="text-xs text-gray-500 mb-4">
+                        <p>Joined: {new Date(member.joined_date).toLocaleDateString()}</p>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button onClick={() => handleEditMember(member)} variant="outline" size="sm" className="flex-1">
+                          <Edit className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
+                        <Button
+                          onClick={() => handleDeleteMember(member.id)}
+                          variant="destructive"
+                          size="sm"
+                          className="flex-1"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Remove
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {!loading && members.length === 0 && (
+              <div className="text-center py-20">
+                <Users className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-2xl font-bold text-gray-600 mb-2">No Squad Members</h3>
+                <p className="text-gray-500 mb-6">Add your first squad member to get started!</p>
+                <Button
+                  onClick={() => {
+                    resetMemberForm()
+                    setShowMemberForm(true)
+                  }}
+                  className="bg-gradient-to-r from-blue-500 to-cyan-500"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add First Member
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Other tabs content (photos and songs) */}
         {activeTab !== "members" && activeTab !== "memories" && (
           <>
