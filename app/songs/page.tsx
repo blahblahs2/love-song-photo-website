@@ -44,6 +44,14 @@ interface Song {
   created_at: string
 }
 
+interface Member {
+  id: number
+  name: string
+  nickname?: string
+  role: string
+  active: boolean
+}
+
 // Demo songs for when database is not available
 const demoSongs: Song[] = [
   {
@@ -106,6 +114,7 @@ declare global {
 
 export default function SongsPage() {
   const [songs, setSongs] = useState<Song[]>([])
+  const [members, setMembers] = useState<Member[]>([])
   const [currentSong, setCurrentSong] = useState<Song | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -140,7 +149,6 @@ export default function SongsPage() {
   })
 
   const formRef = useRef<HTMLFormElement>(null)
-  const friendNames = ["Senghuot", "Kimhour", "Chanleang", "Dyheng", "Somiet", "Ratanak", "Lyteng", "Lyheng"]
   const moods = ["Energetic", "Happy", "Chill", "Nostalgic", "Adventurous", "Romantic", "Uplifting", "Melancholic"]
 
   // Load YouTube API with retry mechanism
@@ -323,22 +331,30 @@ export default function SongsPage() {
     }
   }, [volume])
 
-  // Load approved songs from the API
+  // Load approved songs and members from the API
   useEffect(() => {
-    async function loadSongs() {
+    async function loadData() {
       setLoading(true)
       setError(null)
       try {
-        const response = await fetch("/api/songs")
-        const data = await response.json()
+        // Load members
+        const membersResponse = await fetch("/api/members")
+        const membersData = await membersResponse.json()
+        if (membersData.success) {
+          setMembers(membersData.members)
+        }
 
-        if (data.success) {
-          if (data.songs.length === 0 && data.message) {
+        // Load songs
+        const songsResponse = await fetch("/api/songs")
+        const songsData = await songsResponse.json()
+
+        if (songsData.success) {
+          if (songsData.songs.length === 0 && songsData.message) {
             // Database not available, use demo songs
             setSongs(demoSongs)
             setIsDemoMode(true)
           } else {
-            setSongs(data.songs)
+            setSongs(songsData.songs)
             setIsDemoMode(false)
           }
         } else {
@@ -347,7 +363,7 @@ export default function SongsPage() {
           setIsDemoMode(true)
         }
       } catch (error) {
-        console.error("Failed to load songs:", error)
+        console.error("Failed to load data:", error)
         // Fallback to demo songs
         setSongs(demoSongs)
         setIsDemoMode(true)
@@ -356,7 +372,7 @@ export default function SongsPage() {
       }
     }
 
-    loadSongs()
+    loadData()
   }, [])
 
   // Clear messages after 5 seconds
@@ -686,9 +702,9 @@ export default function SongsPage() {
                       required
                     >
                       <option value="">Select your name</option>
-                      {friendNames.map((name) => (
-                        <option key={name} value={name}>
-                          {name}
+                      {members.map((member) => (
+                        <option key={member.id} value={member.name}>
+                          {member.name} {member.nickname && `(${member.nickname})`}
                         </option>
                       ))}
                     </select>

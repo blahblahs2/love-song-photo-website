@@ -1,5 +1,6 @@
 import { getApprovedPhotosAction } from "@/app/actions/photo-actions"
 import { getApprovedSongsAction } from "@/app/actions/song-actions"
+import { getAllMembersAction } from "@/app/actions/member-actions"
 import { Users, Camera, Music, Star, Heart, Zap, Coffee, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -43,6 +44,7 @@ export default async function HomePage() {
   // Fetch actual counts from database
   const photos = await getApprovedPhotosAction()
   const songs = await getApprovedSongsAction()
+  const members = await getAllMembersAction()
 
   // Get recent activities (most recent photo and song)
   const recentPhoto = photos.length > 0 ? photos[0] : null
@@ -92,7 +94,13 @@ export default async function HomePage() {
   ]
 
   const stats = [
-    { icon: Users, label: "Squad Members", value: "8", color: "text-blue-600", bg: "bg-blue-100" },
+    {
+      icon: Users,
+      label: "Squad Members",
+      value: members.length.toString(),
+      color: "text-blue-600",
+      bg: "bg-blue-100",
+    },
     {
       icon: Camera,
       label: "Memories Captured",

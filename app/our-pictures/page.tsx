@@ -24,8 +24,17 @@ interface Photo {
   created_at: string
 }
 
+interface Member {
+  id: number
+  name: string
+  nickname?: string
+  role: string
+  active: boolean
+}
+
 export default function OurPicturesPage() {
   const [photos, setPhotos] = useState<Photo[]>([])
+  const [members, setMembers] = useState<Member[]>([])
   const [showUploadForm, setShowUploadForm] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
@@ -47,31 +56,36 @@ export default function OurPicturesPage() {
 
   const formRef = useRef<HTMLFormElement>(null)
 
-  const friendNames = ["Senghuot", "Kimhour", "Chanleang", "Dyheng", "Somiet", "Ratanak", "Lyteng", "Lyheng"]
-
-  // Load approved photos from the API
+  // Load members and photos
   useEffect(() => {
-    async function loadPhotos() {
+    async function loadData() {
       setLoading(true)
       setError(null)
       try {
-        const response = await fetch("/api/photos")
-        const data = await response.json()
+        // Load members
+        const membersResponse = await fetch("/api/members")
+        const membersData = await membersResponse.json()
+        if (membersData.success) {
+          setMembers(membersData.members)
+        }
 
-        if (data.success) {
-          setPhotos(data.photos)
+        // Load photos
+        const photosResponse = await fetch("/api/photos")
+        const photosData = await photosResponse.json()
+        if (photosData.success) {
+          setPhotos(photosData.photos)
         } else {
           setError("Failed to load photos")
         }
       } catch (error) {
-        console.error("Failed to load photos:", error)
-        setError("Failed to load photos. Please try again later.")
+        console.error("Failed to load data:", error)
+        setError("Failed to load data. Please try again later.")
       } finally {
         setLoading(false)
       }
     }
 
-    loadPhotos()
+    loadData()
   }, [])
 
   // Clear messages after 5 seconds
@@ -312,9 +326,9 @@ export default function OurPicturesPage() {
                       required
                     >
                       <option value="">Select your name</option>
-                      {friendNames.map((name) => (
-                        <option key={name} value={name}>
-                          {name}
+                      {members.map((member) => (
+                        <option key={member.id} value={member.name}>
+                          {member.name} {member.nickname && `(${member.nickname})`}
                         </option>
                       ))}
                     </select>

@@ -26,6 +26,21 @@ export async function initDatabase() {
       }
     }
 
+    // Create members table if it doesn't exist
+    await sql`
+      CREATE TABLE IF NOT EXISTS members (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100) NOT NULL UNIQUE,
+        nickname VARCHAR(100),
+        role VARCHAR(100) DEFAULT 'Member',
+        joined_date DATE DEFAULT CURRENT_DATE,
+        avatar_url TEXT,
+        bio TEXT,
+        active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `
+
     // Create photos table if it doesn't exist
     await sql`
       CREATE TABLE IF NOT EXISTS photos (
@@ -79,6 +94,95 @@ async function ensureConnection() {
     }
   }
   return sql
+}
+
+// Member database operations (new)
+export async function getAllMembersFromDB() {
+  try {
+    const connection = await ensureConnection()
+    const members = await connection`SELECT * FROM members WHERE active = true ORDER BY name ASC`
+    return members
+  } catch (error) {
+    console.error("Error fetching all members:", error)
+    return []
+  }
+}
+
+export async function addMemberToDB(member: {
+  name: string
+  nickname?: string
+  role?: string
+  bio?: string
+  avatar_url?: string
+}) {
+  try {
+    const connection = await ensureConnection()
+    const result = await connection`
+      INSERT INTO members (name, nickname, role, bio, avatar_url)
+      VALUES (${member.name}, ${member.nickname || ""}, ${member.role || "Member"}, ${member.bio || ""}, ${member.avatar_url || ""})
+      RETURNING *
+    `
+    return result[0]
+  } catch (error) {
+    console.error("Error adding member to database:", error)
+    throw error
+  }
+}
+
+export async function updateMemberInDB(
+  id: number,
+  member: {
+    name?: string
+    nickname?: string
+    role?: string
+    bio?: string
+    avatar_url?: string
+  },
+) {
+  try {
+    const connection = await ensureConnection()
+    const result = await connection`
+      UPDATE members 
+      SET 
+        name = COALESCE(${member.name}, name),
+        nickname = COALESCE(${member.nickname}, nickname),
+        role = COALESCE(${member.role}, role),
+        bio = COALESCE(${member.bio}, bio),
+        avatar_url = COALESCE(${member.avatar_url}, avatar_url)
+      WHERE id = ${id}
+      RETURNING *
+    `
+    return result[0] || null
+  } catch (error) {
+    console.error("Error updating member:", error)
+    throw error
+  }
+}
+
+export async function deleteMemberFromDB(id: number) {
+  try {
+    const connection = await ensureConnection()
+    // Soft delete - set active to false instead of actually deleting
+    const result = await connection`
+      UPDATE members SET active = false WHERE id = ${id}
+      RETURNING *
+    `
+    return result.length > 0
+  } catch (error) {
+    console.error("Error deleting member:", error)
+    return false
+  }
+}
+
+export async function getMemberByIdFromDB(id: number) {
+  try {
+    const connection = await ensureConnection()
+    const result = await connection`SELECT * FROM members WHERE id = ${id} AND active = true`
+    return result[0] || null
+  } catch (error) {
+    console.error("Error fetching member by ID:", error)
+    return null
+  }
 }
 
 // Photo database operations (existing)
@@ -177,7 +281,7 @@ export async function getPhotoByIdFromDB(id: number) {
   }
 }
 
-// Song database operations (new)
+// Song database operations (existing)
 export async function getAllSongsFromDB() {
   try {
     const connection = await ensureConnection()

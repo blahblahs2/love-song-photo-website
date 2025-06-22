@@ -3,14 +3,31 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { Check, Clock, ImageIcon, Trash2, Eye, LogOut, User, Lock, Music, ExternalLink, RefreshCw } from "lucide-react"
+import {
+  Check,
+  Clock,
+  ImageIcon,
+  Trash2,
+  Eye,
+  LogOut,
+  User,
+  Lock,
+  Music,
+  ExternalLink,
+  RefreshCw,
+  Plus,
+  Edit,
+  Users,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { approvePhotoAction, deletePhotoAction } from "@/app/actions/photo-actions"
 import { approveSongAction, deleteSongAction } from "@/app/actions/song-actions"
+import { addMemberAction, deleteMemberAction, updateMemberAction } from "@/app/actions/member-actions"
 import DatabaseStatus from "@/components/database-status"
 
 interface Photo {
@@ -42,6 +59,17 @@ interface Song {
   created_at: string
 }
 
+interface Member {
+  id: number
+  name: string
+  nickname?: string
+  role: string
+  bio?: string
+  joined_date: string
+  active: boolean
+  created_at: string
+}
+
 // Admin credentials - Change these to your desired username and password
 const ADMIN_CREDENTIALS = {
   username: process.env.NEXT_PUBLIC_ADMIN_USERNAME || "kimhour",
@@ -56,12 +84,23 @@ export default function AdminPage() {
   const [allPhotos, setAllPhotos] = useState<Photo[]>([])
   const [pendingSongs, setPendingSongs] = useState<Song[]>([])
   const [allSongs, setAllSongs] = useState<Song[]>([])
+  const [members, setMembers] = useState<Member[]>([])
   const [loading, setLoading] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
-  const [activeTab, setActiveTab] = useState<"pending-photos" | "all-photos" | "pending-songs" | "all-songs">(
-    "pending-photos",
-  )
+  const [activeTab, setActiveTab] = useState<
+    "pending-photos" | "all-photos" | "pending-songs" | "all-songs" | "members"
+  >("pending-photos")
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+
+  // Member form state
+  const [showMemberForm, setShowMemberForm] = useState(false)
+  const [editingMember, setEditingMember] = useState<Member | null>(null)
+  const [memberForm, setMemberForm] = useState({
+    name: "",
+    nickname: "",
+    role: "Member",
+    bio: "",
+  })
 
   // Check if already authenticated (simple session check)
   useEffect(() => {
@@ -118,7 +157,7 @@ export default function AdminPage() {
       if (activeTab.includes("photos")) {
         const endpoint = activeTab === "pending-photos" ? "/api/admin/photos?type=pending" : "/api/admin/photos"
         const response = await fetch(endpoint, {
-          cache: "no-store", // Force fresh data
+          cache: "no-store",
           headers: {
             "Cache-Control": "no-cache",
           },
@@ -132,10 +171,10 @@ export default function AdminPage() {
             setAllPhotos(data.photos)
           }
         }
-      } else {
+      } else if (activeTab.includes("songs")) {
         const endpoint = activeTab === "pending-songs" ? "/api/admin/songs?type=pending" : "/api/admin/songs"
         const response = await fetch(endpoint, {
-          cache: "no-store", // Force fresh data
+          cache: "no-store",
           headers: {
             "Cache-Control": "no-cache",
           },
@@ -148,6 +187,18 @@ export default function AdminPage() {
           } else {
             setAllSongs(data.songs)
           }
+        }
+      } else if (activeTab === "members") {
+        const response = await fetch("/api/members", {
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache",
+          },
+        })
+        const data = await response.json()
+
+        if (data.success) {
+          setMembers(data.members)
         }
       }
     } catch (error) {
@@ -164,12 +215,81 @@ export default function AdminPage() {
     setMessage({ type: "success", text: "Data refreshed successfully!" })
   }
 
+  const resetMemberForm = () => {
+    setMemberForm({
+      name: "",
+      nickname: "",
+      role: "Member",
+      bio: "",
+    })
+    setEditingMember(null)
+    setShowMemberForm(false)
+  }
+
+  const handleMemberSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
+    try {
+      const formData = new FormData()
+      formData.append("name", memberForm.name)
+      formData.append("nickname", memberForm.nickname)
+      formData.append("role", memberForm.role)
+      formData.append("bio", memberForm.bio)
+
+      let result
+      if (editingMember) {
+        result = await updateMemberAction(editingMember.id, formData)
+      } else {
+        result = await addMemberAction(formData)
+      }
+
+      if (result.success) {
+        setMessage({ type: "success", text: result.message })
+        resetMemberForm()
+        await loadData()
+      } else {
+        setMessage({ type: "error", text: result.message })
+      }
+    } catch (error) {
+      setMessage({ type: "error", text: "Failed to save member" })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleEditMember = (member: Member) => {
+    setMemberForm({
+      name: member.name,
+      nickname: member.nickname || "",
+      role: member.role,
+      bio: member.bio || "",
+    })
+    setEditingMember(member)
+    setShowMemberForm(true)
+  }
+
+  const handleDeleteMember = async (memberId: number) => {
+    if (confirm("Are you sure you want to remove this member? This action cannot be undone.")) {
+      try {
+        const result = await deleteMemberAction(memberId)
+        if (result.success) {
+          setMessage({ type: "success", text: result.message })
+          await loadData()
+        } else {
+          setMessage({ type: "error", text: result.message })
+        }
+      } catch (error) {
+        setMessage({ type: "error", text: "Failed to remove member" })
+      }
+    }
+  }
+
   const handleApprovePhoto = async (photoId: number) => {
     try {
       const result = await approvePhotoAction(photoId)
       if (result.success) {
         setMessage({ type: "success", text: result.message })
-        // Refresh data to show updated status
         await loadData()
       } else {
         setMessage({ type: "error", text: result.message })
@@ -185,7 +305,6 @@ export default function AdminPage() {
         const result = await deletePhotoAction(photoId)
         if (result.success) {
           setMessage({ type: "success", text: result.message })
-          // Refresh data to show updated list
           await loadData()
         } else {
           setMessage({ type: "error", text: result.message })
@@ -201,7 +320,6 @@ export default function AdminPage() {
       const result = await approveSongAction(songId)
       if (result.success) {
         setMessage({ type: "success", text: result.message })
-        // Refresh data to show updated status
         await loadData()
       } else {
         setMessage({ type: "error", text: result.message })
@@ -217,7 +335,6 @@ export default function AdminPage() {
         const result = await deleteSongAction(songId)
         if (result.success) {
           setMessage({ type: "success", text: result.message })
-          // Refresh data to show updated list
           await loadData()
         } else {
           setMessage({ type: "error", text: result.message })
@@ -293,7 +410,7 @@ export default function AdminPage() {
             <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
               Admin Dashboard
             </h1>
-            <p className="text-gray-600">Manage photos and songs</p>
+            <p className="text-gray-600">Manage photos, songs, and squad members</p>
           </div>
           <div className="flex gap-2">
             <Button onClick={refreshData} variant="outline" disabled={refreshing}>
@@ -355,219 +472,383 @@ export default function AdminPage() {
             <Eye className="h-4 w-4 mr-2" />
             All Songs ({allSongs.length})
           </Button>
+          <Button
+            onClick={() => setActiveTab("members")}
+            variant={activeTab === "members" ? "default" : "outline"}
+            className={activeTab === "members" ? "bg-gradient-to-r from-blue-500 to-cyan-500" : ""}
+          >
+            <Users className="h-4 w-4 mr-2" />
+            Squad Members ({members.length})
+          </Button>
         </div>
 
-        {/* Content Grid */}
-        {loading ? (
-          <div className="text-center py-20">
-            <Clock className="h-12 w-12 animate-spin mx-auto text-purple-500 mb-4" />
-            <p className="text-lg text-gray-600">Loading...</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {(activeTab === "pending-photos"
-              ? pendingPhotos
-              : activeTab === "all-photos"
-                ? allPhotos
-                : activeTab === "pending-songs"
-                  ? pendingSongs
-                  : allSongs
-            ).map((item) => {
-              if ("image_url" in item) {
-                const photo = item as Photo
-                return (
-                  <Card key={photo.id} className="bg-white/90 backdrop-blur-sm">
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start mb-3">
-                        <h3 className="font-bold text-lg">{photo.title}</h3>
-                        <Badge variant={photo.approved ? "default" : "secondary"}>
-                          {photo.approved ? "Approved" : "Pending"}
-                        </Badge>
-                      </div>
+        {/* Members Tab Content */}
+        {activeTab === "members" && (
+          <div className="space-y-6">
+            {/* Add Member Button */}
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-800">Squad Members</h2>
+              <Button
+                onClick={() => {
+                  resetMemberForm()
+                  setShowMemberForm(true)
+                }}
+                className="bg-gradient-to-r from-blue-500 to-cyan-500"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Member
+              </Button>
+            </div>
 
-                      <div className="aspect-video bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg mb-3 overflow-hidden">
-                        <img
-                          src={photo.image_url || "/placeholder.svg"}
-                          alt={photo.title}
-                          className="w-full h-full object-cover"
+            {/* Member Form */}
+            {showMemberForm && (
+              <Card className="bg-white/90 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle>{editingMember ? "Edit Member" : "Add New Member"}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleMemberSubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">
+                          Name <span className="text-red-500">*</span>
+                        </label>
+                        <Input
+                          value={memberForm.name}
+                          onChange={(e) => setMemberForm({ ...memberForm, name: e.target.value })}
+                          placeholder="Enter full name"
+                          required
                         />
                       </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Nickname</label>
+                        <Input
+                          value={memberForm.nickname}
+                          onChange={(e) => setMemberForm({ ...memberForm, nickname: e.target.value })}
+                          placeholder="Enter nickname (optional)"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Role</label>
+                      <select
+                        value={memberForm.role}
+                        onChange={(e) => setMemberForm({ ...memberForm, role: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      >
+                        <option value="Member">Member</option>
+                        <option value="Admin">Admin</option>
+                        <option value="Moderator">Moderator</option>
+                        <option value="Photographer">Photographer</option>
+                        <option value="DJ">DJ</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Bio</label>
+                      <Textarea
+                        value={memberForm.bio}
+                        onChange={(e) => setMemberForm({ ...memberForm, bio: e.target.value })}
+                        placeholder="Tell us about this squad member..."
+                        rows={3}
+                      />
+                    </div>
+                    <div className="flex gap-4">
+                      <Button type="submit" disabled={loading} className="bg-gradient-to-r from-blue-500 to-cyan-500">
+                        {loading ? "Saving..." : editingMember ? "Update Member" : "Add Member"}
+                      </Button>
+                      <Button type="button" variant="outline" onClick={resetMemberForm}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            )}
 
-                      <p className="text-gray-600 text-sm mb-3 line-clamp-2">{photo.description}</p>
-
-                      <div className="space-y-2 text-xs text-gray-500 mb-4">
-                        <p>
-                          <strong>Date:</strong> {new Date(photo.date).toLocaleDateString()}
-                        </p>
-                        <p>
-                          <strong>Uploaded by:</strong> {photo.uploaded_by}
-                        </p>
-                        {photo.location && (
-                          <p>
-                            <strong>Location:</strong> {photo.location}
-                          </p>
-                        )}
+            {/* Members List */}
+            {loading ? (
+              <div className="text-center py-20">
+                <Clock className="h-12 w-12 animate-spin mx-auto text-purple-500 mb-4" />
+                <p className="text-lg text-gray-600">Loading members...</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {members.map((member) => (
+                  <Card key={member.id} className="bg-white/90 backdrop-blur-sm">
+                    <CardContent className="p-6">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-800">{member.name}</h3>
+                          {member.nickname && <p className="text-gray-600">"{member.nickname}"</p>}
+                        </div>
+                        <Badge variant="secondary">{member.role}</Badge>
                       </div>
 
-                      {photo.tags && photo.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-4">
-                          {photo.tags.map((tag, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
+                      {member.bio && <p className="text-gray-600 text-sm mb-4 line-clamp-3">{member.bio}</p>}
+
+                      <div className="text-xs text-gray-500 mb-4">
+                        <p>Joined: {new Date(member.joined_date).toLocaleDateString()}</p>
+                      </div>
 
                       <div className="flex gap-2">
-                        {!photo.approved && (
-                          <Button
-                            onClick={() => handleApprovePhoto(photo.id)}
-                            className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                            size="sm"
-                          >
-                            <Check className="h-4 w-4 mr-1" />
-                            Approve
-                          </Button>
-                        )}
+                        <Button onClick={() => handleEditMember(member)} variant="outline" size="sm" className="flex-1">
+                          <Edit className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
                         <Button
-                          onClick={() => handleDeletePhoto(photo.id)}
+                          onClick={() => handleDeleteMember(member.id)}
                           variant="destructive"
                           size="sm"
                           className="flex-1"
                         >
                           <Trash2 className="h-4 w-4 mr-1" />
-                          Delete
+                          Remove
                         </Button>
                       </div>
                     </CardContent>
                   </Card>
-                )
-              } else {
-                const song = item as Song
-                return (
-                  <Card key={song.id} className="bg-white/90 backdrop-blur-sm">
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start mb-3">
-                        <h3 className="font-bold text-lg">{song.title}</h3>
-                        <Badge variant={song.approved ? "default" : "secondary"}>
-                          {song.approved ? "Approved" : "Pending"}
-                        </Badge>
-                      </div>
+                ))}
+              </div>
+            )}
 
-                      <div className="aspect-video bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg mb-3 overflow-hidden">
-                        {song.thumbnail_url ? (
-                          <img
-                            src={song.thumbnail_url || "/placeholder.svg"}
-                            alt={song.title}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex items-center justify-center h-full">
-                            <Music className="h-12 w-12 text-gray-500" />
-                          </div>
-                        )}
-                      </div>
-
-                      <p className="text-gray-600 text-sm mb-3">
-                        <strong>Artist:</strong> {song.artist}
-                      </p>
-                      {song.description && (
-                        <p className="text-gray-600 text-sm mb-3 line-clamp-2">{song.description}</p>
-                      )}
-
-                      <div className="space-y-2 text-xs text-gray-500 mb-4">
-                        <p>
-                          <strong>Added by:</strong> {song.added_by}
-                        </p>
-                        {song.mood && (
-                          <p>
-                            <strong>Mood:</strong> {song.mood}
-                          </p>
-                        )}
-                      </div>
-
-                      {song.tags && song.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-4">
-                          {song.tags.map((tag, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-
-                      <div className="flex gap-2 mb-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => window.open(song.youtube_url, "_blank")}
-                        >
-                          <ExternalLink className="h-4 w-4 mr-1" />
-                          YouTube
-                        </Button>
-                      </div>
-
-                      <div className="flex gap-2">
-                        {!song.approved && (
-                          <Button
-                            onClick={() => handleApproveSong(song.id)}
-                            className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                            size="sm"
-                          >
-                            <Check className="h-4 w-4 mr-1" />
-                            Approve
-                          </Button>
-                        )}
-                        <Button
-                          onClick={() => handleDeleteSong(song.id)}
-                          variant="destructive"
-                          size="sm"
-                          className="flex-1"
-                        >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          Delete
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              }
-            })}
+            {!loading && members.length === 0 && (
+              <div className="text-center py-20">
+                <Users className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-2xl font-bold text-gray-600 mb-2">No Squad Members</h3>
+                <p className="text-gray-500 mb-6">Add your first squad member to get started!</p>
+                <Button
+                  onClick={() => {
+                    resetMemberForm()
+                    setShowMemberForm(true)
+                  }}
+                  className="bg-gradient-to-r from-blue-500 to-cyan-500"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add First Member
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Empty state */}
-        {!loading &&
-          (activeTab === "pending-photos"
-            ? pendingPhotos
-            : activeTab === "all-photos"
-              ? allPhotos
-              : activeTab === "pending-songs"
-                ? pendingSongs
-                : allSongs
-          ).length === 0 && (
-            <div className="text-center py-20">
-              {activeTab.includes("photos") ? (
-                <ImageIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              ) : (
-                <Music className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              )}
-              <h3 className="text-2xl font-bold text-gray-600 mb-2">
-                {activeTab === "pending-photos"
-                  ? "No Pending Photos"
+        {/* Other tabs content (photos and songs) */}
+        {activeTab !== "members" && (
+          <>
+            {/* Loading State */}
+            {loading ? (
+              <div className="text-center py-20">
+                <Clock className="h-12 w-12 animate-spin mx-auto text-purple-500 mb-4" />
+                <p className="text-lg text-gray-600">Loading...</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                {(activeTab === "pending-photos"
+                  ? pendingPhotos
                   : activeTab === "all-photos"
-                    ? "No Photos Found"
+                    ? allPhotos
                     : activeTab === "pending-songs"
-                      ? "No Pending Songs"
-                      : "No Songs Found"}
-              </h3>
-              <p className="text-gray-500">
-                {activeTab.includes("pending") ? "All items have been reviewed." : "No items have been uploaded yet."}
-              </p>
-            </div>
-          )}
+                      ? pendingSongs
+                      : allSongs
+                ).map((item) => {
+                  if ("image_url" in item) {
+                    const photo = item as Photo
+                    return (
+                      <Card key={photo.id} className="bg-white/90 backdrop-blur-sm">
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start mb-3">
+                            <h3 className="font-bold text-lg">{photo.title}</h3>
+                            <Badge variant={photo.approved ? "default" : "secondary"}>
+                              {photo.approved ? "Approved" : "Pending"}
+                            </Badge>
+                          </div>
+
+                          <div className="aspect-video bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg mb-3 overflow-hidden">
+                            <img
+                              src={photo.image_url || "/placeholder.svg"}
+                              alt={photo.title}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+
+                          <p className="text-gray-600 text-sm mb-3 line-clamp-2">{photo.description}</p>
+
+                          <div className="space-y-2 text-xs text-gray-500 mb-4">
+                            <p>
+                              <strong>Date:</strong> {new Date(photo.date).toLocaleDateString()}
+                            </p>
+                            <p>
+                              <strong>Uploaded by:</strong> {photo.uploaded_by}
+                            </p>
+                            {photo.location && (
+                              <p>
+                                <strong>Location:</strong> {photo.location}
+                              </p>
+                            )}
+                          </div>
+
+                          {photo.tags && photo.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mb-4">
+                              {photo.tags.map((tag, index) => (
+                                <Badge key={index} variant="outline" className="text-xs">
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="flex gap-2">
+                            {!photo.approved && (
+                              <Button
+                                onClick={() => handleApprovePhoto(photo.id)}
+                                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                                size="sm"
+                              >
+                                <Check className="h-4 w-4 mr-1" />
+                                Approve
+                              </Button>
+                            )}
+                            <Button
+                              onClick={() => handleDeletePhoto(photo.id)}
+                              variant="destructive"
+                              size="sm"
+                              className="flex-1"
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Delete
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  } else {
+                    const song = item as Song
+                    return (
+                      <Card key={song.id} className="bg-white/90 backdrop-blur-sm">
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start mb-3">
+                            <h3 className="font-bold text-lg">{song.title}</h3>
+                            <Badge variant={song.approved ? "default" : "secondary"}>
+                              {song.approved ? "Approved" : "Pending"}
+                            </Badge>
+                          </div>
+
+                          <div className="aspect-video bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg mb-3 overflow-hidden">
+                            {song.thumbnail_url ? (
+                              <img
+                                src={song.thumbnail_url || "/placeholder.svg"}
+                                alt={song.title}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex items-center justify-center h-full">
+                                <Music className="h-12 w-12 text-gray-500" />
+                              </div>
+                            )}
+                          </div>
+
+                          <p className="text-gray-600 text-sm mb-3">
+                            <strong>Artist:</strong> {song.artist}
+                          </p>
+                          {song.description && (
+                            <p className="text-gray-600 text-sm mb-3 line-clamp-2">{song.description}</p>
+                          )}
+
+                          <div className="space-y-2 text-xs text-gray-500 mb-4">
+                            <p>
+                              <strong>Added by:</strong> {song.added_by}
+                            </p>
+                            {song.mood && (
+                              <p>
+                                <strong>Mood:</strong> {song.mood}
+                              </p>
+                            )}
+                          </div>
+
+                          {song.tags && song.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mb-4">
+                              {song.tags.map((tag, index) => (
+                                <Badge key={index} variant="outline" className="text-xs">
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="flex gap-2 mb-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => window.open(song.youtube_url, "_blank")}
+                            >
+                              <ExternalLink className="h-4 w-4 mr-1" />
+                              YouTube
+                            </Button>
+                          </div>
+
+                          <div className="flex gap-2">
+                            {!song.approved && (
+                              <Button
+                                onClick={() => handleApproveSong(song.id)}
+                                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                                size="sm"
+                              >
+                                <Check className="h-4 w-4 mr-1" />
+                                Approve
+                              </Button>
+                            )}
+                            <Button
+                              onClick={() => handleDeleteSong(song.id)}
+                              variant="destructive"
+                              size="sm"
+                              className="flex-1"
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Delete
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  }
+                })}
+              </div>
+            )}
+
+            {/* Empty state */}
+            {!loading &&
+              (activeTab === "pending-photos"
+                ? pendingPhotos
+                : activeTab === "all-photos"
+                  ? allPhotos
+                  : activeTab === "pending-songs"
+                    ? pendingSongs
+                    : allSongs
+              ).length === 0 && (
+                <div className="text-center py-20">
+                  {activeTab.includes("photos") ? (
+                    <ImageIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  ) : (
+                    <Music className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  )}
+                  <h3 className="text-2xl font-bold text-gray-600 mb-2">
+                    {activeTab === "pending-photos"
+                      ? "No Pending Photos"
+                      : activeTab === "all-photos"
+                        ? "No Photos Found"
+                        : activeTab === "pending-songs"
+                          ? "No Pending Songs"
+                          : "No Songs Found"}
+                  </h3>
+                  <p className="text-gray-500">
+                    {activeTab.includes("pending")
+                      ? "All items have been reviewed."
+                      : "No items have been uploaded yet."}
+                  </p>
+                </div>
+              )}
+          </>
+        )}
       </div>
     </div>
   )
