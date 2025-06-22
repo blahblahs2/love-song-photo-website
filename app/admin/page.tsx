@@ -238,15 +238,6 @@ export default function AdminPage() {
             <p className="text-gray-600">Enter your credentials to access the admin panel</p>
           </CardHeader>
           <CardContent>
-            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800 font-medium">Current Credentials:</p>
-              <p className="text-sm text-blue-700">Username: {ADMIN_CREDENTIALS.username}</p>
-              <p className="text-sm text-blue-700">Password: {ADMIN_CREDENTIALS.password}</p>
-              <p className="text-xs text-blue-600 mt-2">
-                💡 To change these, update the ADMIN_CREDENTIALS in the code or set environment variables
-              </p>
-            </div>
-
             {loginError && (
               <Alert className="mb-4 border-red-200 bg-red-50">
                 <AlertDescription className="text-red-800">{loginError}</AlertDescription>
