@@ -5,10 +5,83 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import Link from "next/link"
 
+// Helper function to format relative time
+function getRelativeTime(dateString: string): string {
+  const now = new Date()
+  const date = new Date(dateString)
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+  if (diffInSeconds < 60) {
+    return `${diffInSeconds} second${diffInSeconds !== 1 ? "s" : ""} ago`
+  }
+
+  const diffInMinutes = Math.floor(diffInSeconds / 60)
+  if (diffInMinutes < 60) {
+    return `${diffInMinutes} minute${diffInMinutes !== 1 ? "s" : ""} ago`
+  }
+
+  const diffInHours = Math.floor(diffInMinutes / 60)
+  if (diffInHours < 24) {
+    return `${diffInHours} hour${diffInHours !== 1 ? "s" : ""} ago`
+  }
+
+  const diffInDays = Math.floor(diffInHours / 24)
+  if (diffInDays < 7) {
+    return `${diffInDays} day${diffInDays !== 1 ? "s" : ""} ago`
+  }
+
+  const diffInWeeks = Math.floor(diffInDays / 7)
+  if (diffInWeeks < 4) {
+    return `${diffInWeeks} week${diffInWeeks !== 1 ? "s" : ""} ago`
+  }
+
+  const diffInMonths = Math.floor(diffInDays / 30)
+  return `${diffInMonths} month${diffInMonths !== 1 ? "s" : ""} ago`
+}
+
 export default async function HomePage() {
   // Fetch actual counts from database
   const photos = await getApprovedPhotosAction()
   const songs = await getApprovedSongsAction()
+
+  // Get recent activities (most recent photo and song)
+  const recentPhoto = photos.length > 0 ? photos[0] : null
+  const recentSong = songs.length > 0 ? songs[0] : null
+
+  // Create activities array with actual data
+  const recentActivities = []
+
+  if (recentPhoto) {
+    recentActivities.push({
+      icon: Camera,
+      activity: "Photo Added",
+      time: getRelativeTime(recentPhoto.created_at),
+      user: recentPhoto.uploaded_by,
+      color: "bg-gradient-to-r from-blue-500 to-cyan-500",
+    })
+  }
+
+  if (recentSong) {
+    recentActivities.push({
+      icon: Music,
+      activity: "Song Added",
+      time: getRelativeTime(recentSong.created_at),
+      user: recentSong.added_by,
+      color: "bg-gradient-to-r from-indigo-500 to-blue-500",
+    })
+  }
+
+  // Sort by most recent first (if we have both)
+  recentActivities.sort((a, b) => {
+    // Simple sorting - in a real app you'd compare actual dates
+    if (a.activity === "Photo Added" && recentPhoto && recentSong) {
+      return new Date(recentPhoto.created_at) > new Date(recentSong.created_at) ? -1 : 1
+    }
+    return 0
+  })
+
+  // Take only the 2 most recent
+  const displayActivities = recentActivities.slice(0, 2)
 
   const friendQuotes = [
     "\"We're not just friends, we're a chaotic family!\" - The Squad",
@@ -35,21 +108,6 @@ export default async function HomePage() {
       bg: "bg-cyan-100",
     },
     { icon: Coffee, label: "Coffee Dates", value: "∞", color: "text-sky-600", bg: "bg-sky-100" },
-  ]
-
-  const recentActivities = [
-    {
-      icon: Camera,
-      activity: "Beach Trip Photos",
-      time: "2 days ago",
-      color: "bg-gradient-to-r from-blue-500 to-cyan-500",
-    },
-    {
-      icon: Music,
-      activity: "New Song Added",
-      time: "1 week ago",
-      color: "bg-gradient-to-r from-indigo-500 to-blue-500",
-    },
   ]
 
   return (
@@ -141,27 +199,53 @@ export default async function HomePage() {
           <h2 className="text-5xl font-bold text-center mb-16 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
             Recent Squad Activities
           </h2>
-          <div className="space-y-6">
-            {recentActivities.map((activity, index) => (
-              <Card
-                key={index}
-                className="hover:shadow-2xl transition-all duration-300 transform hover:scale-102 bg-white/90 backdrop-blur-sm border-0 shadow-lg"
-              >
-                <CardContent className="p-8">
-                  <div className="flex items-center space-x-6">
-                    <div className={`p-4 rounded-2xl ${activity.color} shadow-lg`}>
-                      <activity.icon className="h-8 w-8 text-white" />
+
+          {displayActivities.length > 0 ? (
+            <div className="space-y-6">
+              {displayActivities.map((activity, index) => (
+                <Card
+                  key={index}
+                  className="hover:shadow-2xl transition-all duration-300 transform hover:scale-102 bg-white/90 backdrop-blur-sm border-0 shadow-lg"
+                >
+                  <CardContent className="p-8">
+                    <div className="flex items-center space-x-6">
+                      <div className={`p-4 rounded-2xl ${activity.color} shadow-lg`}>
+                        <activity.icon className="h-8 w-8 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-gray-800 mb-1">{activity.activity}</h3>
+                        <p className="text-gray-600 font-medium">{activity.time}</p>
+                        <p className="text-sm text-gray-500">by {activity.user}</p>
+                      </div>
+                      <Zap className="h-6 w-6 text-yellow-500 animate-pulse" />
                     </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-800 mb-1">{activity.activity}</h3>
-                      <p className="text-gray-600 font-medium">{activity.time}</p>
-                    </div>
-                    <Zap className="h-6 w-6 text-yellow-500 animate-pulse" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <Heart className="h-10 w-10 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-600 mb-2">No Recent Activities</h3>
+              <p className="text-gray-500 mb-6">Be the first to add a photo or song!</p>
+              <div className="flex flex-wrap justify-center gap-4">
+                <Button asChild className="bg-gradient-to-r from-blue-500 to-indigo-600">
+                  <Link href="/our-pictures">
+                    <Camera className="h-4 w-4 mr-2" />
+                    Add Photo
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="border-blue-500 text-blue-600">
+                  <Link href="/songs">
+                    <Music className="h-4 w-4 mr-2" />
+                    Add Song
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
