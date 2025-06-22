@@ -103,9 +103,10 @@ export async function uploadSong(formData: FormData) {
     // Add to database
     const savedSong = await addSongToDB(newSong)
 
-    // Revalidate pages
+    // Revalidate all relevant pages
     revalidatePath("/songs")
     revalidatePath("/admin")
+    revalidatePath("/")
 
     return {
       success: true,
@@ -156,8 +157,12 @@ export async function approveSongAction(id: number) {
     await ensureDbInitialized()
     const success = await approveSongInDB(id)
     if (success) {
+      // Revalidate all pages that show songs
       revalidatePath("/songs")
       revalidatePath("/admin")
+      revalidatePath("/")
+      revalidatePath("/api/songs")
+
       return { success: true, message: "Song approved successfully!" }
     }
     return { success: false, message: "Song not found" }
@@ -172,8 +177,12 @@ export async function deleteSongAction(id: number) {
     await ensureDbInitialized()
     const success = await deleteSongFromDB(id)
     if (success) {
+      // Revalidate all pages that show songs
       revalidatePath("/songs")
       revalidatePath("/admin")
+      revalidatePath("/")
+      revalidatePath("/api/songs")
+
       return { success: true, message: "Song deleted successfully!" }
     }
     return { success: false, message: "Song not found" }

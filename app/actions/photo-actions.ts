@@ -64,9 +64,10 @@ export async function uploadPhoto(formData: FormData) {
     // Add to database
     const savedPhoto = await addPhotoToDB(newPhoto)
 
-    // Revalidate pages
+    // Revalidate all relevant pages
     revalidatePath("/our-pictures")
     revalidatePath("/admin")
+    revalidatePath("/")
 
     return {
       success: true,
@@ -118,25 +119,43 @@ export async function getPendingPhotosAction() {
 }
 
 export async function approvePhotoAction(id: number) {
-  await ensureDbInitialized()
-  const success = await approvePhotoInDB(id)
-  if (success) {
-    revalidatePath("/our-pictures")
-    revalidatePath("/admin")
-    return { success: true, message: "Photo approved successfully!" }
+  try {
+    await ensureDbInitialized()
+    const success = await approvePhotoInDB(id)
+    if (success) {
+      // Revalidate all pages that show photos
+      revalidatePath("/our-pictures")
+      revalidatePath("/admin")
+      revalidatePath("/")
+      revalidatePath("/api/photos")
+
+      return { success: true, message: "Photo approved successfully!" }
+    }
+    return { success: false, message: "Photo not found" }
+  } catch (error) {
+    console.error("Error approving photo:", error)
+    return { success: false, message: "Failed to approve photo" }
   }
-  return { success: false, message: "Photo not found" }
 }
 
 export async function deletePhotoAction(id: number) {
-  await ensureDbInitialized()
-  const success = await deletePhotoFromDB(id)
-  if (success) {
-    revalidatePath("/our-pictures")
-    revalidatePath("/admin")
-    return { success: true, message: "Photo deleted successfully!" }
+  try {
+    await ensureDbInitialized()
+    const success = await deletePhotoFromDB(id)
+    if (success) {
+      // Revalidate all pages that show photos
+      revalidatePath("/our-pictures")
+      revalidatePath("/admin")
+      revalidatePath("/")
+      revalidatePath("/api/photos")
+
+      return { success: true, message: "Photo deleted successfully!" }
+    }
+    return { success: false, message: "Photo not found" }
+  } catch (error) {
+    console.error("Error deleting photo:", error)
+    return { success: false, message: "Failed to delete photo" }
   }
-  return { success: false, message: "Photo not found" }
 }
 
 export async function getPhotoByIdAction(id: number) {
