@@ -1,14 +1,14 @@
-"use client"
-
-import { useState, useEffect } from "react"
+import { getApprovedPhotosAction } from "@/app/actions/photo-actions"
+import { getApprovedSongsAction } from "@/app/actions/song-actions"
 import { Users, Camera, Music, Star, Heart, Zap, Coffee, Gamepad2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import Link from "next/link"
 
-export default function HomePage() {
-  const [currentQuote, setCurrentQuote] = useState(0)
-  const [isVisible, setIsVisible] = useState(false)
+export default async function HomePage() {
+  // Fetch actual counts from database
+  const photos = await getApprovedPhotosAction()
+  const songs = await getApprovedSongsAction()
 
   const friendQuotes = [
     "\"We're not just friends, we're a chaotic family!\" - The Squad",
@@ -20,8 +20,8 @@ export default function HomePage() {
 
   const stats = [
     { icon: Users, label: "Squad Members", value: "8", color: "text-purple-600" },
-    { icon: Camera, label: "Memories Captured", value: "247", color: "text-pink-600" },
-    { icon: Music, label: "Songs in Playlist", value: "42", color: "text-orange-600" },
+    { icon: Camera, label: "Memories Captured", value: photos.length.toString(), color: "text-pink-600" },
+    { icon: Music, label: "Songs in Playlist", value: songs.length.toString(), color: "text-orange-600" },
     { icon: Coffee, label: "Coffee Dates", value: "∞", color: "text-amber-600" },
   ]
 
@@ -31,20 +31,6 @@ export default function HomePage() {
     { icon: Gamepad2, activity: "Game Night Pics", time: "2 weeks ago", color: "bg-green-500" },
     { icon: Coffee, activity: "Cafe Hangout", time: "3 weeks ago", color: "bg-amber-500" },
   ]
-
-  useEffect(() => {
-    setIsVisible(true)
-    const interval = setInterval(() => {
-      setCurrentQuote((prev) => (prev + 1) % friendQuotes.length)
-    }, 4000)
-    return () => clearInterval(interval)
-  }, [])
-
-  useEffect(() => {
-    setIsVisible(false)
-    const timeout = setTimeout(() => setIsVisible(true), 100)
-    return () => clearTimeout(timeout)
-  }, [currentQuote])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-orange-50">
@@ -62,10 +48,8 @@ export default function HomePage() {
             Our Squad
           </h1>
           <div className="h-16 flex items-center justify-center">
-            <p
-              className={`text-2xl text-gray-700 transition-opacity duration-500 ${isVisible ? "opacity-100" : "opacity-0"}`}
-            >
-              {friendQuotes[currentQuote]}
+            <p className="text-2xl text-gray-700">
+              {friendQuotes[0]} {/* Show first quote or rotate on client if needed */}
             </p>
           </div>
 
