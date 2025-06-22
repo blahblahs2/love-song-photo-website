@@ -91,7 +91,7 @@ export default function AdminPage() {
 
     try {
       // Simple client-side authentication for demo
-      if (loginForm.username === Admin && loginForm.password === Example) {
+      if (loginForm.username === ADMIN_CREDENTIALS.username && loginForm.password === ADMIN_CREDENTIALS.password) {
         setIsAuthenticated(true)
         sessionStorage.setItem("admin_logged_in", "true")
         console.log("Admin login successful!")
