@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { Check, Clock, ImageIcon, Trash2, Eye, LogOut, User, Lock, Music, ExternalLink } from "lucide-react"
+import { Check, Clock, ImageIcon, Trash2, Eye, LogOut, User, Lock, Music, ExternalLink, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -45,7 +45,7 @@ interface Song {
 // Admin credentials - Change these to your desired username and password
 const ADMIN_CREDENTIALS = {
   username: process.env.NEXT_PUBLIC_ADMIN_USERNAME || "kimhour",
-  password: process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "usais9@",
+  password: process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "mypassword123",
 }
 
 export default function AdminPage() {
@@ -57,6 +57,7 @@ export default function AdminPage() {
   const [pendingSongs, setPendingSongs] = useState<Song[]>([])
   const [allSongs, setAllSongs] = useState<Song[]>([])
   const [loading, setLoading] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const [activeTab, setActiveTab] = useState<"pending-photos" | "all-photos" | "pending-songs" | "all-songs">(
     "pending-photos",
   )
@@ -116,7 +117,12 @@ export default function AdminPage() {
     try {
       if (activeTab.includes("photos")) {
         const endpoint = activeTab === "pending-photos" ? "/api/admin/photos?type=pending" : "/api/admin/photos"
-        const response = await fetch(endpoint)
+        const response = await fetch(endpoint, {
+          cache: "no-store", // Force fresh data
+          headers: {
+            "Cache-Control": "no-cache",
+          },
+        })
         const data = await response.json()
 
         if (data.success) {
@@ -128,7 +134,12 @@ export default function AdminPage() {
         }
       } else {
         const endpoint = activeTab === "pending-songs" ? "/api/admin/songs?type=pending" : "/api/admin/songs"
-        const response = await fetch(endpoint)
+        const response = await fetch(endpoint, {
+          cache: "no-store", // Force fresh data
+          headers: {
+            "Cache-Control": "no-cache",
+          },
+        })
         const data = await response.json()
 
         if (data.success) {
@@ -146,12 +157,20 @@ export default function AdminPage() {
     }
   }
 
+  const refreshData = async () => {
+    setRefreshing(true)
+    await loadData()
+    setRefreshing(false)
+    setMessage({ type: "success", text: "Data refreshed successfully!" })
+  }
+
   const handleApprovePhoto = async (photoId: number) => {
     try {
       const result = await approvePhotoAction(photoId)
       if (result.success) {
         setMessage({ type: "success", text: result.message })
-        loadData() // Reload photos
+        // Refresh data to show updated status
+        await loadData()
       } else {
         setMessage({ type: "error", text: result.message })
       }
@@ -166,7 +185,8 @@ export default function AdminPage() {
         const result = await deletePhotoAction(photoId)
         if (result.success) {
           setMessage({ type: "success", text: result.message })
-          loadData() // Reload photos
+          // Refresh data to show updated list
+          await loadData()
         } else {
           setMessage({ type: "error", text: result.message })
         }
@@ -181,7 +201,8 @@ export default function AdminPage() {
       const result = await approveSongAction(songId)
       if (result.success) {
         setMessage({ type: "success", text: result.message })
-        loadData() // Reload songs
+        // Refresh data to show updated status
+        await loadData()
       } else {
         setMessage({ type: "error", text: result.message })
       }
@@ -196,7 +217,8 @@ export default function AdminPage() {
         const result = await deleteSongAction(songId)
         if (result.success) {
           setMessage({ type: "success", text: result.message })
-          loadData() // Reload songs
+          // Refresh data to show updated list
+          await loadData()
         } else {
           setMessage({ type: "error", text: result.message })
         }
@@ -216,15 +238,6 @@ export default function AdminPage() {
             <p className="text-gray-600">Enter your credentials to access the admin panel</p>
           </CardHeader>
           <CardContent>
-            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800 font-medium">Current Credentials:</p>
-              <p className="text-sm text-blue-700">Username: admin</p>
-              <p className="text-sm text-blue-700">Password: admin</p>
-              <p className="text-xs text-blue-600 mt-2">
-                💡 This is only example.
-              </p>
-            </div>
-
             {loginError && (
               <Alert className="mb-4 border-red-200 bg-red-50">
                 <AlertDescription className="text-red-800">{loginError}</AlertDescription>
@@ -282,10 +295,16 @@ export default function AdminPage() {
             </h1>
             <p className="text-gray-600">Manage photos and songs</p>
           </div>
-          <Button onClick={handleLogout} variant="outline">
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={refreshData} variant="outline" disabled={refreshing}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? "animate-spin" : ""}`} />
+              {refreshing ? "Refreshing..." : "Refresh"}
+            </Button>
+            <Button onClick={handleLogout} variant="outline">
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </div>
 
         {/* Database Status */}
