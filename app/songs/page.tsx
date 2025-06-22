@@ -17,6 +17,7 @@ import {
   AlertCircle,
   ExternalLink,
   Database,
+  RefreshCw,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -118,10 +119,13 @@ export default function SongsPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [isDemoMode, setIsDemoMode] = useState(false)
   const [playerReady, setPlayerReady] = useState(false)
+  const [apiLoaded, setApiLoaded] = useState(false)
+  const [playerError, setPlayerError] = useState<string | null>(null)
 
   // YouTube player ref
   const playerRef = useRef<any>(null)
   const playerContainerRef = useRef<HTMLDivElement>(null)
+  const apiLoadAttempts = useRef(0)
 
   // Form state
   const [formData, setFormData] = useState({
@@ -139,70 +143,149 @@ export default function SongsPage() {
   const friendNames = ["Senghuot", "Kimhour", "Chanleang", "Dyheng", "Somiet", "Ratanak", "Lyteng", "Lyheng"]
   const moods = ["Energetic", "Happy", "Chill", "Nostalgic", "Adventurous", "Romantic", "Uplifting", "Melancholic"]
 
-  // Load YouTube API
+  // Load YouTube API with retry mechanism
   useEffect(() => {
-    // Load YouTube IFrame API
-    const tag = document.createElement("script")
-    tag.src = "https://www.youtube.com/iframe_api"
-    const firstScriptTag = document.getElementsByTagName("script")[0]
-    firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag)
+    const loadYouTubeAPI = () => {
+      // Check if API is already loaded
+      if (window.YT && window.YT.Player) {
+        setApiLoaded(true)
+        setPlayerReady(true)
+        return
+      }
 
-    // Setup API ready callback
-    window.onYouTubeIframeAPIReady = () => {
-      setPlayerReady(true)
+      // Check if script is already loading
+      if (document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+        return
+      }
+
+      console.log("Loading YouTube IFrame API...")
+
+      // Load YouTube IFrame API
+      const tag = document.createElement("script")
+      tag.src = "https://www.youtube.com/iframe_api"
+      tag.async = true
+      tag.onerror = () => {
+        console.error("Failed to load YouTube API")
+        setPlayerError("Failed to load YouTube API. Please check your internet connection.")
+      }
+
+      const firstScriptTag = document.getElementsByTagName("script")[0]
+      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag)
+
+      // Setup API ready callback
+      window.onYouTubeIframeAPIReady = () => {
+        console.log("YouTube API loaded successfully!")
+        setApiLoaded(true)
+        setPlayerReady(true)
+        setPlayerError(null)
+      }
+
+      // Timeout fallback
+      setTimeout(() => {
+        if (!apiLoaded && apiLoadAttempts.current < 3) {
+          apiLoadAttempts.current++
+          console.log(`YouTube API load attempt ${apiLoadAttempts.current}`)
+          loadYouTubeAPI()
+        } else if (!apiLoaded) {
+          setPlayerError("YouTube API failed to load after multiple attempts. Please refresh the page.")
+        }
+      }, 10000) // 10 second timeout
     }
+
+    loadYouTubeAPI()
 
     return () => {
       // Cleanup
-      if (playerRef.current) {
-        playerRef.current.destroy()
+      if (playerRef.current && playerRef.current.destroy) {
+        try {
+          playerRef.current.destroy()
+        } catch (e) {
+          console.log("Player cleanup error:", e)
+        }
       }
     }
   }, [])
 
   // Initialize YouTube player when ready
   useEffect(() => {
-    if (playerReady && currentSong && playerContainerRef.current) {
+    if (apiLoaded && currentSong && playerContainerRef.current && window.YT && window.YT.Player) {
+      console.log("Initializing YouTube player for:", currentSong.title)
+
       // Destroy existing player
-      if (playerRef.current) {
-        playerRef.current.destroy()
+      if (playerRef.current && playerRef.current.destroy) {
+        try {
+          playerRef.current.destroy()
+        } catch (e) {
+          console.log("Error destroying previous player:", e)
+        }
       }
 
       // Create new player
-      playerRef.current = new window.YT.Player(playerContainerRef.current, {
-        height: "0",
-        width: "0",
-        videoId: currentSong.youtube_id,
-        playerVars: {
-          autoplay: 0,
-          controls: 0,
-          disablekb: 1,
-          fs: 0,
-          iv_load_policy: 3,
-          modestbranding: 1,
-          rel: 0,
-          showinfo: 0,
-        },
-        events: {
-          onReady: (event: any) => {
-            event.target.setVolume(volume)
-            setDuration(event.target.getDuration())
+      try {
+        playerRef.current = new window.YT.Player(playerContainerRef.current, {
+          height: "0",
+          width: "0",
+          videoId: currentSong.youtube_id,
+          playerVars: {
+            autoplay: 0,
+            controls: 0,
+            disablekb: 1,
+            fs: 0,
+            iv_load_policy: 3,
+            modestbranding: 1,
+            rel: 0,
+            showinfo: 0,
+            origin: window.location.origin,
           },
-          onStateChange: (event: any) => {
-            if (event.data === window.YT.PlayerState.PLAYING) {
-              setIsPlaying(true)
-              startTimeUpdate()
-            } else if (event.data === window.YT.PlayerState.PAUSED) {
-              setIsPlaying(false)
-            } else if (event.data === window.YT.PlayerState.ENDED) {
-              setIsPlaying(false)
-              nextSong()
-            }
+          events: {
+            onReady: (event: any) => {
+              console.log("Player ready!")
+              event.target.setVolume(volume)
+              const videoDuration = event.target.getDuration()
+              setDuration(videoDuration || 0)
+              setPlayerError(null)
+            },
+            onStateChange: (event: any) => {
+              if (event.data === window.YT.PlayerState.PLAYING) {
+                setIsPlaying(true)
+                startTimeUpdate()
+              } else if (event.data === window.YT.PlayerState.PAUSED) {
+                setIsPlaying(false)
+                stopTimeUpdate()
+              } else if (event.data === window.YT.PlayerState.ENDED) {
+                setIsPlaying(false)
+                stopTimeUpdate()
+                nextSong()
+              }
+            },
+            onError: (event: any) => {
+              console.error("YouTube player error:", event.data)
+              let errorMessage = "Video playback error"
+              switch (event.data) {
+                case 2:
+                  errorMessage = "Invalid video ID"
+                  break
+                case 5:
+                  errorMessage = "HTML5 player error"
+                  break
+                case 100:
+                  errorMessage = "Video not found or private"
+                  break
+                case 101:
+                case 150:
+                  errorMessage = "Video not available for embedded playback"
+                  break
+              }
+              setPlayerError(errorMessage)
+            },
           },
-        },
-      })
+        })
+      } catch (error) {
+        console.error("Error creating YouTube player:", error)
+        setPlayerError("Failed to create video player")
+      }
     }
-  }, [playerReady, currentSong])
+  }, [apiLoaded, currentSong])
 
   // Time update interval
   const timeUpdateInterval = useRef<NodeJS.Timeout | null>(null)
@@ -213,7 +296,11 @@ export default function SongsPage() {
     }
     timeUpdateInterval.current = setInterval(() => {
       if (playerRef.current && playerRef.current.getCurrentTime) {
-        setCurrentTime(Math.floor(playerRef.current.getCurrentTime()))
+        try {
+          setCurrentTime(Math.floor(playerRef.current.getCurrentTime()))
+        } catch (e) {
+          console.log("Error getting current time:", e)
+        }
       }
     }, 1000)
   }
@@ -228,7 +315,11 @@ export default function SongsPage() {
   // Update volume when changed
   useEffect(() => {
     if (playerRef.current && playerRef.current.setVolume) {
-      playerRef.current.setVolume(volume)
+      try {
+        playerRef.current.setVolume(volume)
+      } catch (e) {
+        console.log("Error setting volume:", e)
+      }
     }
   }, [volume])
 
@@ -283,8 +374,12 @@ export default function SongsPage() {
   useEffect(() => {
     return () => {
       stopTimeUpdate()
-      if (playerRef.current) {
-        playerRef.current.destroy()
+      if (playerRef.current && playerRef.current.destroy) {
+        try {
+          playerRef.current.destroy()
+        } catch (e) {
+          console.log("Cleanup error:", e)
+        }
       }
     }
   }, [])
@@ -368,15 +463,22 @@ export default function SongsPage() {
   }
 
   const selectSong = (song: Song) => {
+    console.log("Selecting song:", song.title)
     setCurrentSong(song)
     setCurrentTime(0)
     setIsPlaying(false)
     setShowLyrics(true)
+    setPlayerError(null)
     stopTimeUpdate()
   }
 
   const playPause = () => {
-    if (playerRef.current) {
+    if (!playerRef.current) {
+      setPlayerError("Player not ready. Please wait or refresh the page.")
+      return
+    }
+
+    try {
       if (isPlaying) {
         playerRef.current.pauseVideo()
         stopTimeUpdate()
@@ -384,6 +486,9 @@ export default function SongsPage() {
         playerRef.current.playVideo()
         startTimeUpdate()
       }
+    } catch (error) {
+      console.error("Error controlling playback:", error)
+      setPlayerError("Playback control error. Please try again.")
     }
   }
 
@@ -409,9 +514,29 @@ export default function SongsPage() {
 
   const seekTo = (time: number) => {
     if (playerRef.current && playerRef.current.seekTo) {
-      playerRef.current.seekTo(time, true)
-      setCurrentTime(time)
+      try {
+        playerRef.current.seekTo(time, true)
+        setCurrentTime(time)
+      } catch (error) {
+        console.error("Error seeking:", error)
+      }
     }
+  }
+
+  const retryPlayer = () => {
+    setPlayerError(null)
+    setPlayerReady(false)
+    setApiLoaded(false)
+    apiLoadAttempts.current = 0
+
+    // Remove existing script
+    const existingScript = document.querySelector('script[src*="youtube.com/iframe_api"]')
+    if (existingScript) {
+      existingScript.remove()
+    }
+
+    // Reload the page to restart everything
+    window.location.reload()
   }
 
   const formatTime = (seconds: number) => {
@@ -436,6 +561,20 @@ export default function SongsPage() {
               <AlertDescription className="text-blue-800">
                 <strong>Demo Mode:</strong> Database not configured. Showing sample songs. Configure your database to
                 add real songs.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Player Error Alert */}
+          {playerError && (
+            <Alert className="max-w-2xl mx-auto mb-6 border-red-200 bg-red-50">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800 flex items-center justify-between">
+                <span>{playerError}</span>
+                <Button onClick={retryPlayer} size="sm" variant="outline">
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                  Retry
+                </Button>
               </AlertDescription>
             </Alert>
           )}
@@ -765,6 +904,7 @@ export default function SongsPage() {
                         step={1}
                         className="w-full"
                         onValueChange={(value) => seekTo(value[0])}
+                        disabled={!apiLoaded || !!playerError}
                       />
                       <div className="flex justify-between text-xs text-gray-500 mt-1">
                         <span>{formatTime(currentTime)}</span>
@@ -774,17 +914,17 @@ export default function SongsPage() {
 
                     {/* Controls */}
                     <div className="flex items-center justify-center space-x-4 mb-4">
-                      <Button variant="ghost" size="sm" onClick={prevSong}>
+                      <Button variant="ghost" size="sm" onClick={prevSong} disabled={!apiLoaded || !!playerError}>
                         <SkipBack className="h-5 w-5" />
                       </Button>
                       <Button
                         onClick={playPause}
                         className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500"
-                        disabled={!playerReady}
+                        disabled={!apiLoaded || !!playerError}
                       >
                         {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={nextSong}>
+                      <Button variant="ghost" size="sm" onClick={nextSong} disabled={!apiLoaded || !!playerError}>
                         <SkipForward className="h-5 w-5" />
                       </Button>
                     </div>
@@ -798,6 +938,7 @@ export default function SongsPage() {
                         step={1}
                         className="flex-1"
                         onValueChange={(value) => setVolume(value[0])}
+                        disabled={!apiLoaded || !!playerError}
                       />
                     </div>
 
@@ -818,10 +959,18 @@ export default function SongsPage() {
                       )}
                     </div>
 
-                    {!playerReady && (
+                    {/* Player Status */}
+                    {!apiLoaded && !playerError && (
                       <div className="text-center text-sm text-gray-500 mt-2">
                         <Loader2 className="h-4 w-4 animate-spin inline mr-2" />
-                        Loading player...
+                        Loading YouTube player...
+                      </div>
+                    )}
+
+                    {playerError && (
+                      <div className="text-center text-sm text-red-500 mt-2">
+                        <AlertCircle className="h-4 w-4 inline mr-2" />
+                        {playerError}
                       </div>
                     )}
                   </>

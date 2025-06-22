@@ -1,30 +1,32 @@
 import { neon } from "@neondatabase/serverless"
 
-// Directly use your Neon PostgreSQL URL
-const DATABASE_URL = "postgresql://neondb_owner:npg_hbn5PYlIDMT6@ep-quiet-cloud-a1efxy0u-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
-
+// Create a connection to the Neon database with error handling
 let sql: any = null
 
 function createConnection() {
   try {
-    if (!DATABASE_URL) {
-      console.error("DATABASE_URL is not set")
+    if (!process.env.DATABASE_URL) {
+      console.error("DATABASE_URL environment variable is not set")
       return null
     }
-    return neon(DATABASE_URL)
+    return neon(process.env.DATABASE_URL)
   } catch (error) {
     console.error("Failed to create database connection:", error)
     return null
   }
 }
 
+// Initialize the database with required tables
 export async function initDatabase() {
   try {
     if (!sql) {
       sql = createConnection()
-      if (!sql) throw new Error("Failed to create database connection")
+      if (!sql) {
+        throw new Error("Failed to create database connection")
+      }
     }
 
+    // Create photos table if it doesn't exist
     await sql`
       CREATE TABLE IF NOT EXISTS photos (
         id SERIAL PRIMARY KEY,
@@ -37,9 +39,10 @@ export async function initDatabase() {
         image_url TEXT NOT NULL,
         approved BOOLEAN DEFAULT false,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      );
+      )
     `
 
+    // Create songs table if it doesn't exist
     await sql`
       CREATE TABLE IF NOT EXISTS songs (
         id SERIAL PRIMARY KEY,
@@ -56,7 +59,7 @@ export async function initDatabase() {
         lyrics TEXT,
         approved BOOLEAN DEFAULT false,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      );
+      )
     `
 
     console.log("Database initialized successfully")
@@ -67,23 +70,23 @@ export async function initDatabase() {
   }
 }
 
+// Helper function to ensure connection
 async function ensureConnection() {
   if (!sql) {
     sql = createConnection()
-    if (!sql) throw new Error("Database connection not available")
+    if (!sql) {
+      throw new Error("Database connection not available")
+    }
   }
   return sql
 }
 
-// =============================
-// PHOTO OPERATIONS
-// =============================
-
+// Photo database operations (existing)
 export async function getAllPhotosFromDB() {
   try {
     const connection = await ensureConnection()
-    const result = await connection`SELECT * FROM photos ORDER BY created_at DESC`
-    return result
+    const photos = await connection`SELECT * FROM photos ORDER BY created_at DESC`
+    return photos
   } catch (error) {
     console.error("Error fetching all photos:", error)
     return []
@@ -93,8 +96,8 @@ export async function getAllPhotosFromDB() {
 export async function getApprovedPhotosFromDB() {
   try {
     const connection = await ensureConnection()
-    const result = await connection`SELECT * FROM photos WHERE approved = true ORDER BY created_at DESC`
-    return result
+    const photos = await connection`SELECT * FROM photos WHERE approved = true ORDER BY created_at DESC`
+    return photos
   } catch (error) {
     console.error("Error fetching approved photos:", error)
     return []
@@ -104,8 +107,8 @@ export async function getApprovedPhotosFromDB() {
 export async function getPendingPhotosFromDB() {
   try {
     const connection = await ensureConnection()
-    const result = await connection`SELECT * FROM photos WHERE approved = false ORDER BY created_at DESC`
-    return result
+    const photos = await connection`SELECT * FROM photos WHERE approved = false ORDER BY created_at DESC`
+    return photos
   } catch (error) {
     console.error("Error fetching pending photos:", error)
     return []
@@ -126,7 +129,7 @@ export async function addPhotoToDB(photo: {
     const result = await connection`
       INSERT INTO photos (title, description, date, location, uploaded_by, tags, image_url, approved)
       VALUES (${photo.title}, ${photo.description}, ${photo.date}, ${photo.location}, ${photo.uploaded_by}, ${photo.tags}, ${photo.image_url}, false)
-      RETURNING *;
+      RETURNING *
     `
     return result[0]
   } catch (error) {
@@ -139,7 +142,8 @@ export async function approvePhotoInDB(id: number) {
   try {
     const connection = await ensureConnection()
     const result = await connection`
-      UPDATE photos SET approved = true WHERE id = ${id} RETURNING *;
+      UPDATE photos SET approved = true WHERE id = ${id}
+      RETURNING *
     `
     return result.length > 0
   } catch (error) {
@@ -152,7 +156,8 @@ export async function deletePhotoFromDB(id: number) {
   try {
     const connection = await ensureConnection()
     const result = await connection`
-      DELETE FROM photos WHERE id = ${id} RETURNING *;
+      DELETE FROM photos WHERE id = ${id}
+      RETURNING *
     `
     return result.length > 0
   } catch (error) {
@@ -172,15 +177,12 @@ export async function getPhotoByIdFromDB(id: number) {
   }
 }
 
-// =============================
-// SONG OPERATIONS
-// =============================
-
+// Song database operations (new)
 export async function getAllSongsFromDB() {
   try {
     const connection = await ensureConnection()
-    const result = await connection`SELECT * FROM songs ORDER BY created_at DESC`
-    return result
+    const songs = await connection`SELECT * FROM songs ORDER BY created_at DESC`
+    return songs
   } catch (error) {
     console.error("Error fetching all songs:", error)
     return []
@@ -190,8 +192,8 @@ export async function getAllSongsFromDB() {
 export async function getApprovedSongsFromDB() {
   try {
     const connection = await ensureConnection()
-    const result = await connection`SELECT * FROM songs WHERE approved = true ORDER BY created_at DESC`
-    return result
+    const songs = await connection`SELECT * FROM songs WHERE approved = true ORDER BY created_at DESC`
+    return songs
   } catch (error) {
     console.error("Error fetching approved songs:", error)
     return []
@@ -201,8 +203,8 @@ export async function getApprovedSongsFromDB() {
 export async function getPendingSongsFromDB() {
   try {
     const connection = await ensureConnection()
-    const result = await connection`SELECT * FROM songs WHERE approved = false ORDER BY created_at DESC`
-    return result
+    const songs = await connection`SELECT * FROM songs WHERE approved = false ORDER BY created_at DESC`
+    return songs
   } catch (error) {
     console.error("Error fetching pending songs:", error)
     return []
@@ -227,7 +229,7 @@ export async function addSongToDB(song: {
     const result = await connection`
       INSERT INTO songs (title, artist, youtube_url, youtube_id, duration, thumbnail_url, description, added_by, tags, mood, lyrics, approved)
       VALUES (${song.title}, ${song.artist}, ${song.youtube_url}, ${song.youtube_id}, ${song.duration || ""}, ${song.thumbnail_url || ""}, ${song.description || ""}, ${song.added_by}, ${song.tags}, ${song.mood || ""}, ${song.lyrics || ""}, false)
-      RETURNING *;
+      RETURNING *
     `
     return result[0]
   } catch (error) {
@@ -240,7 +242,8 @@ export async function approveSongInDB(id: number) {
   try {
     const connection = await ensureConnection()
     const result = await connection`
-      UPDATE songs SET approved = true WHERE id = ${id} RETURNING *;
+      UPDATE songs SET approved = true WHERE id = ${id}
+      RETURNING *
     `
     return result.length > 0
   } catch (error) {
@@ -253,7 +256,8 @@ export async function deleteSongFromDB(id: number) {
   try {
     const connection = await ensureConnection()
     const result = await connection`
-      DELETE FROM songs WHERE id = ${id} RETURNING *;
+      DELETE FROM songs WHERE id = ${id}
+      RETURNING *
     `
     return result.length > 0
   } catch (error) {

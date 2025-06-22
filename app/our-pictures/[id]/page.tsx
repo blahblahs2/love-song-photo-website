@@ -19,29 +19,32 @@ interface Photo {
   created_at: string
 }
 
-export default function PhotoDetailPage() {
+export default function PhotoDetailPage({ params }: { params: { id: string } }) {
   const [photo, setPhoto] = useState<Photo | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // Simulate loading photo (no API)
-    const fakePhoto: Photo = {
-      id: 1,
-      title: "A Memory With You",
-      description: "This was one of the happiest days we shared together.",
-      date: "2025-01-14",
-      location: "Rome, Italy",
-      uploaded_by: "You ❤️ Me",
-      tags: ["Love", "Vacation", "Forever"],
-      image_url: "/my-photo.jpg", // Must be in public/ folder
-      created_at: "2025-01-14T12:00:00Z",
+    async function loadPhoto() {
+      try {
+        const response = await fetch(`/api/photos/${params.id}`)
+        const data = await response.json()
+
+        if (data.success) {
+          setPhoto(data.photo)
+        } else {
+          setError("Photo not found")
+        }
+      } catch (error) {
+        console.error("Failed to load photo:", error)
+        setError("Failed to load photo")
+      } finally {
+        setLoading(false)
+      }
     }
 
-    setTimeout(() => {
-      setPhoto(fakePhoto)
-      setLoading(false)
-    }, 500)
-  }, [])
+    loadPhoto()
+  }, [params.id])
 
   if (loading) {
     return (
@@ -54,7 +57,7 @@ export default function PhotoDetailPage() {
     )
   }
 
-  if (!photo) {
+  if (error || !photo) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 pt-16 flex items-center justify-center">
         <div className="text-center">
@@ -87,9 +90,6 @@ export default function PhotoDetailPage() {
               src={photo.image_url || "/placeholder.svg"}
               alt={photo.title}
               className="w-full h-auto max-h-[600px] object-contain bg-black"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = "/placeholder.svg"
-              }}
             />
             <div className="absolute top-4 right-4">
               <Heart className="h-8 w-8 text-pink-500 fill-current" />

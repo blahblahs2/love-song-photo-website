@@ -1,20 +1,20 @@
-// app/api/admin/songs/route.ts
-import { neon } from "@neondatabase/serverless";
-import { NextResponse } from "next/server";
+import { getPendingSongsAction, getAllSongsAction } from "@/app/actions/song-actions"
+import { NextResponse } from "next/server"
 
-const sql = neon(process.env.DATABASE_URL!);
-
-async function getApprovedSongsAction() {
+export async function GET(request: Request) {
   try {
-    const result = await sql`SELECT * FROM songs WHERE approved = true ORDER BY created_at DESC`;
-    return result;
-  } catch (error) {
-    console.error("Error in getApprovedSongsAction:", error);
-    return [];
-  }
-}
+    const { searchParams } = new URL(request.url)
+    const type = searchParams.get("type")
 
-export async function GET() {
-  const songs = await getApprovedSongsAction();
-  return NextResponse.json(songs);
+    if (type === "pending") {
+      const songs = await getPendingSongsAction()
+      return NextResponse.json({ success: true, songs })
+    } else {
+      const songs = await getAllSongsAction()
+      return NextResponse.json({ success: true, songs })
+    }
+  } catch (error) {
+    console.error("Failed to fetch admin songs:", error)
+    return NextResponse.json({ success: false, error: "Failed to fetch songs" }, { status: 500 })
+  }
 }

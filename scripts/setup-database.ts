@@ -1,19 +1,15 @@
 import { neon } from "@neondatabase/serverless"
 
-async function initializeDatabase() {
+// Your Neon database connection string
+const DATABASE_URL =
+  "postgresql://friend_owner:npg_FASnNjRyx46E@ep-dry-meadow-a8i6bfv7-pooler.eastus2.azure.neon.tech/friend?sslmode=require"
+
+async function setupDatabase() {
   try {
-    console.log("🚀 Initializing database...")
+    console.log("🚀 Setting up your Neon database...")
 
-    // Check if DATABASE_URL exists
-    if (!process.env.DATABASE_URL) {
-      console.error("❌ DATABASE_URL environment variable is not set")
-      console.log("📝 Please add DATABASE_URL to your .env.local file")
-      console.log("🔗 Get a free database at: https://neon.tech")
-      return
-    }
-
-    // Create a connection to the database
-    const sql = neon(process.env.DATABASE_URL!)
+    // Create a connection to your database
+    const sql = neon(DATABASE_URL)
 
     // Test connection
     console.log("🔌 Testing database connection...")
@@ -21,6 +17,7 @@ async function initializeDatabase() {
     console.log("✅ Database connection successful!")
 
     // Create photos table
+    console.log("📸 Creating photos table...")
     await sql`
       CREATE TABLE IF NOT EXISTS photos (
         id SERIAL PRIMARY KEY,
@@ -35,39 +32,39 @@ async function initializeDatabase() {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       )
     `
-
-    console.log("✅ Photos table created or already exists")
+    console.log("✅ Photos table created!")
 
     // Create songs table
+    console.log("🎵 Creating songs table...")
     await sql`
       CREATE TABLE IF NOT EXISTS songs (
         id SERIAL PRIMARY KEY,
         title VARCHAR(255) NOT NULL,
         artist VARCHAR(255) NOT NULL,
-        youtube_url VARCHAR(255) NOT NULL,
-        youtube_id VARCHAR(255) NOT NULL,
-        thumbnail_url VARCHAR(255) NOT NULL,
+        youtube_url TEXT NOT NULL,
+        youtube_id VARCHAR(50) NOT NULL,
+        thumbnail_url TEXT,
         description TEXT,
         added_by VARCHAR(100) NOT NULL,
         tags TEXT[],
-        mood VARCHAR(100),
+        mood VARCHAR(50),
         lyrics TEXT,
         approved BOOLEAN DEFAULT false,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       )
     `
+    console.log("✅ Songs table created!")
 
-    console.log("✅ Songs table created or already exists")
+    // Check if we have any data
+    const photoCount = await sql`SELECT COUNT(*) FROM photos`
+    const songCount = await sql`SELECT COUNT(*) FROM songs`
 
-    // Check if we have sample data
-    const existingPhotos = await sql`SELECT COUNT(*) FROM photos`
-    const count = Number(existingPhotos[0].count)
+    console.log(`📊 Current data: ${photoCount[0].count} photos, ${songCount[0].count} songs`)
 
-    // Add sample data if the table is empty
-    if (count === 0) {
-      console.log("📝 Adding sample data...")
+    // Add sample data if tables are empty
+    if (Number(photoCount[0].count) === 0) {
+      console.log("📝 Adding sample photos...")
 
-      // Sample photos
       const samplePhotos = [
         {
           title: "Epic Beach Day",
@@ -97,29 +94,22 @@ async function initializeDatabase() {
           uploaded_by: "Somiet",
           tags: ["Coffee Date", "Chill", "Long Talks"],
           image_url: "/placeholder.svg?height=400&width=400",
-          approved: true,
-        },
-        {
-          title: "Hiking Adventure Gone Wrong",
-          description: "We got lost for 3 hours but found the best view ever. Worth it!",
-          date: "2023-10-05",
-          location: "Griffith Observatory Trail",
-          uploaded_by: "Ratanak",
-          tags: ["Adventure", "Hiking", "Epic Fail"],
-          image_url: "/placeholder.svg?height=400&width=400",
           approved: false, // This one needs approval
         },
       ]
 
-      // Insert sample photos
       for (const photo of samplePhotos) {
         await sql`
           INSERT INTO photos (title, description, date, location, uploaded_by, tags, image_url, approved)
           VALUES (${photo.title}, ${photo.description}, ${photo.date}, ${photo.location}, ${photo.uploaded_by}, ${photo.tags}, ${photo.image_url}, ${photo.approved})
         `
       }
+      console.log("✅ Sample photos added!")
+    }
 
-      // Sample songs
+    if (Number(songCount[0].count) === 0) {
+      console.log("📝 Adding sample songs...")
+
       const sampleSongs = [
         {
           title: "Squad Anthem",
@@ -151,26 +141,23 @@ async function initializeDatabase() {
         },
       ]
 
-      // Insert sample songs
       for (const song of sampleSongs) {
         await sql`
           INSERT INTO songs (title, artist, youtube_url, youtube_id, thumbnail_url, description, added_by, tags, mood, lyrics, approved)
           VALUES (${song.title}, ${song.artist}, ${song.youtube_url}, ${song.youtube_id}, ${song.thumbnail_url}, ${song.description}, ${song.added_by}, ${song.tags}, ${song.mood}, ${song.lyrics}, ${song.approved})
         `
       }
-
-      console.log("✅ Sample data added successfully")
-    } else {
-      console.log(`📊 Database already contains ${count} photos`)
+      console.log("✅ Sample songs added!")
     }
 
-    console.log("🎉 Database initialization complete!")
-    console.log("🔗 You can now upload photos and they will persist after refresh!")
+    console.log("🎉 Database setup complete!")
+    console.log("🔗 Your database is ready to use!")
+    console.log("📝 Don't forget to set the DATABASE_URL environment variable in your deployment!")
   } catch (error) {
-    console.error("❌ Error initializing database:", error)
-    console.log("💡 Make sure your DATABASE_URL is correct and the database is accessible")
+    console.error("❌ Error setting up database:", error)
+    console.log("💡 Make sure your database URL is correct and accessible")
   }
 }
 
-// Run the initialization
-initializeDatabase()
+// Run the setup
+setupDatabase()

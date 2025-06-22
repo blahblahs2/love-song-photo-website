@@ -1,13 +1,11 @@
-// app/api/songs/route.ts
-
 import { getApprovedSongsAction } from "@/app/actions/song-actions"
 import { NextResponse } from "next/server"
 
 export async function GET() {
   try {
-    // Check for DATABASE_URL
+    // Check if DATABASE_URL is available
     if (!process.env.DATABASE_URL) {
-      console.error("❌ DATABASE_URL not set. Check your .env.local file.")
+      console.error("DATABASE_URL environment variable is not set")
       return NextResponse.json({
         success: true,
         songs: [],
@@ -15,12 +13,12 @@ export async function GET() {
       })
     }
 
-    // Fetch approved songs from database
     const songs = await getApprovedSongsAction()
-
     return NextResponse.json({ success: true, songs })
   } catch (error) {
-    console.error("❌ Failed to fetch songs:", error)
+    console.error("Failed to fetch songs:", error)
+
+    // Return empty array instead of error to prevent UI breaking
     return NextResponse.json({
       success: true,
       songs: [],

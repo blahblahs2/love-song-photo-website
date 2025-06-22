@@ -45,7 +45,7 @@ interface Song {
 // Admin credentials - Change these to your desired username and password
 const ADMIN_CREDENTIALS = {
   username: process.env.NEXT_PUBLIC_ADMIN_USERNAME || "kimhour",
-  password: process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "usais9@",
+  password: process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "mypassword123",
 }
 
 export default function AdminPage() {
@@ -218,10 +218,10 @@ export default function AdminPage() {
           <CardContent>
             <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-800 font-medium">Current Credentials:</p>
-              <p className="text-sm text-blue-700">Username: admin</p>
-              <p className="text-sm text-blue-700">Password: admin</p>
+              <p className="text-sm text-blue-700">Username: {ADMIN_CREDENTIALS.username}</p>
+              <p className="text-sm text-blue-700">Password: {ADMIN_CREDENTIALS.password}</p>
               <p className="text-xs text-blue-600 mt-2">
-                💡 This is only example.
+                💡 To change these, update the ADMIN_CREDENTIALS in the code or set environment variables
               </p>
             </div>
 
