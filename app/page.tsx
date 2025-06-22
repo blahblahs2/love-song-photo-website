@@ -1,6 +1,6 @@
 import { getApprovedPhotosAction } from "@/app/actions/photo-actions"
 import { getApprovedSongsAction } from "@/app/actions/song-actions"
-import { Users, Camera, Music, Star, Heart, Zap, Coffee, Gamepad2, Sparkles } from "lucide-react"
+import { Users, Camera, Music, Star, Heart, Zap, Coffee, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import Link from "next/link"
@@ -50,13 +50,6 @@ export default async function HomePage() {
       time: "1 week ago",
       color: "bg-gradient-to-r from-indigo-500 to-blue-500",
     },
-    {
-      icon: Gamepad2,
-      activity: "Game Night Pics",
-      time: "2 weeks ago",
-      color: "bg-gradient-to-r from-cyan-500 to-teal-500",
-    },
-    { icon: Coffee, activity: "Cafe Hangout", time: "3 weeks ago", color: "bg-gradient-to-r from-sky-500 to-blue-500" },
   ]
 
   return (
