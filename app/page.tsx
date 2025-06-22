@@ -5,6 +5,7 @@ import { Users, Camera, Music, Star, Heart, Zap, Coffee, Sparkles } from "lucide
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import Link from "next/link"
+import { getAllMemoriesAction } from "@/app/actions/memory-actions"
 
 // Helper function to format relative time
 function getRelativeTime(dateString: string): string {
@@ -45,6 +46,7 @@ export default async function HomePage() {
   const photos = await getApprovedPhotosAction()
   const songs = await getApprovedSongsAction()
   const members = await getAllMembersAction()
+  const memories = await getAllMemoriesAction()
 
   // Get recent activities (most recent photo and song)
   const recentPhoto = photos.length > 0 ? photos[0] : null
@@ -264,46 +266,69 @@ export default async function HomePage() {
             Latest Squad Memories
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-            {[
-              {
-                title: "Beach Day Chaos",
-                desc: "When we tried to build a sandcastle but ended up in a sand fight",
-                emoji: "🏖️",
-                gradient: "from-blue-400 to-cyan-500",
-              },
-              {
-                title: "Game Night Madness",
-                desc: "The night Sarah flipped the Monopoly board",
-                emoji: "🎮",
-                gradient: "from-indigo-400 to-blue-500",
-              },
-              {
-                title: "Coffee Shop Takeover",
-                desc: "We literally stayed for 6 hours and they had to kick us out",
-                emoji: "☕",
-                gradient: "from-cyan-400 to-teal-500",
-              },
-            ].map((memory, index) => (
-              <Card
-                key={index}
-                className="overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:scale-105 bg-gradient-to-br from-white to-blue-50 border-0 shadow-lg"
-              >
-                <CardContent className="p-8 text-center">
-                  <div
-                    className={`w-20 h-20 bg-gradient-to-r ${memory.gradient} rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg`}
+            {memories.length > 0
+              ? memories.slice(0, 3).map((memory, index) => (
+                  <Card
+                    key={memory.id}
+                    className="overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:scale-105 bg-gradient-to-br from-white to-blue-50 border-0 shadow-lg"
                   >
-                    <span className="text-4xl">{memory.emoji}</span>
-                  </div>
-                  <h3 className="text-2xl font-bold text-gray-800 mb-4">{memory.title}</h3>
-                  <p className="text-gray-600 mb-6 leading-relaxed">{memory.desc}</p>
-                  <div className="flex justify-center space-x-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    <CardContent className="p-8 text-center">
+                      <div
+                        className={`w-20 h-20 bg-gradient-to-r ${memory.gradient} rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg`}
+                      >
+                        <span className="text-4xl">{memory.emoji}</span>
+                      </div>
+                      <h3 className="text-2xl font-bold text-gray-800 mb-4">{memory.title}</h3>
+                      <p className="text-gray-600 mb-6 leading-relaxed">{memory.description}</p>
+                      <div className="flex justify-center space-x-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              : // Fallback to default memories if none exist
+                [
+                  {
+                    title: "Beach Day Chaos",
+                    description: "When we tried to build a sandcastle but ended up in a sand fight",
+                    emoji: "🏖️",
+                    gradient: "from-blue-400 to-cyan-500",
+                  },
+                  {
+                    title: "Game Night Madness",
+                    description: "The night Sarah flipped the Monopoly board",
+                    emoji: "🎮",
+                    gradient: "from-indigo-400 to-blue-500",
+                  },
+                  {
+                    title: "Coffee Shop Takeover",
+                    description: "We literally stayed for 6 hours and they had to kick us out",
+                    emoji: "☕",
+                    gradient: "from-cyan-400 to-teal-500",
+                  },
+                ].map((memory, index) => (
+                  <Card
+                    key={index}
+                    className="overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:scale-105 bg-gradient-to-br from-white to-blue-50 border-0 shadow-lg"
+                  >
+                    <CardContent className="p-8 text-center">
+                      <div
+                        className={`w-20 h-20 bg-gradient-to-r ${memory.gradient} rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg`}
+                      >
+                        <span className="text-4xl">{memory.emoji}</span>
+                      </div>
+                      <h3 className="text-2xl font-bold text-gray-800 mb-4">{memory.title}</h3>
+                      <p className="text-gray-600 mb-6 leading-relaxed">{memory.description}</p>
+                      <div className="flex justify-center space-x-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
           </div>
           <div className="text-center mt-12">
             <Button

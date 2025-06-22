@@ -18,6 +18,7 @@ import {
   Plus,
   Edit,
   Users,
+  Star,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -28,6 +29,7 @@ import { Badge } from "@/components/ui/badge"
 import { approvePhotoAction, deletePhotoAction } from "@/app/actions/photo-actions"
 import { approveSongAction, deleteSongAction } from "@/app/actions/song-actions"
 import { addMemberAction, deleteMemberAction, updateMemberAction } from "@/app/actions/member-actions"
+import { addMemoryAction, deleteMemoryAction, updateMemoryAction } from "@/app/actions/memory-actions"
 import DatabaseStatus from "@/components/database-status"
 
 interface Photo {
@@ -70,6 +72,17 @@ interface Member {
   created_at: string
 }
 
+interface Memory {
+  id: number
+  title: string
+  description: string
+  emoji: string
+  gradient: string
+  display_order: number
+  active: boolean
+  created_at: string
+}
+
 // Admin credentials - Change these to your desired username and password
 const ADMIN_CREDENTIALS = {
   username: process.env.NEXT_PUBLIC_ADMIN_USERNAME || "kimhour",
@@ -85,10 +98,11 @@ export default function AdminPage() {
   const [pendingSongs, setPendingSongs] = useState<Song[]>([])
   const [allSongs, setAllSongs] = useState<Song[]>([])
   const [members, setMembers] = useState<Member[]>([])
+  const [memories, setMemories] = useState<Memory[]>([])
   const [loading, setLoading] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [activeTab, setActiveTab] = useState<
-    "pending-photos" | "all-photos" | "pending-songs" | "all-songs" | "members"
+    "pending-photos" | "all-photos" | "pending-songs" | "all-songs" | "members" | "memories"
   >("pending-photos")
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
@@ -100,6 +114,17 @@ export default function AdminPage() {
     nickname: "",
     role: "Member",
     bio: "",
+  })
+
+  // Memory form state
+  const [showMemoryForm, setShowMemoryForm] = useState(false)
+  const [editingMemory, setEditingMemory] = useState<Memory | null>(null)
+  const [memoryForm, setMemoryForm] = useState({
+    title: "",
+    description: "",
+    emoji: "🎉",
+    gradient: "from-blue-400 to-cyan-500",
+    displayOrder: 0,
   })
 
   // Check if already authenticated (simple session check)
@@ -200,6 +225,18 @@ export default function AdminPage() {
         if (data.success) {
           setMembers(data.members)
         }
+      } else if (activeTab === "memories") {
+        const response = await fetch("/api/memories", {
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache",
+          },
+        })
+        const data = await response.json()
+
+        if (data.success) {
+          setMemories(data.memories)
+        }
       }
     } catch (error) {
       console.error("Failed to load data:", error)
@@ -224,6 +261,18 @@ export default function AdminPage() {
     })
     setEditingMember(null)
     setShowMemberForm(false)
+  }
+
+  const resetMemoryForm = () => {
+    setMemoryForm({
+      title: "",
+      description: "",
+      emoji: "🎉",
+      gradient: "from-blue-400 to-cyan-500",
+      displayOrder: 0,
+    })
+    setEditingMemory(null)
+    setShowMemoryForm(false)
   }
 
   const handleMemberSubmit = async (e: React.FormEvent) => {
@@ -258,6 +307,39 @@ export default function AdminPage() {
     }
   }
 
+  const handleMemorySubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
+    try {
+      const formData = new FormData()
+      formData.append("title", memoryForm.title)
+      formData.append("description", memoryForm.description)
+      formData.append("emoji", memoryForm.emoji)
+      formData.append("gradient", memoryForm.gradient)
+      formData.append("displayOrder", memoryForm.displayOrder.toString())
+
+      let result
+      if (editingMemory) {
+        result = await updateMemoryAction(editingMemory.id, formData)
+      } else {
+        result = await addMemoryAction(formData)
+      }
+
+      if (result.success) {
+        setMessage({ type: "success", text: result.message })
+        resetMemoryForm()
+        await loadData()
+      } else {
+        setMessage({ type: "error", text: result.message })
+      }
+    } catch (error) {
+      setMessage({ type: "error", text: "Failed to save memory" })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleEditMember = (member: Member) => {
     setMemberForm({
       name: member.name,
@@ -281,6 +363,34 @@ export default function AdminPage() {
         }
       } catch (error) {
         setMessage({ type: "error", text: "Failed to remove member" })
+      }
+    }
+  }
+
+  const handleEditMemory = (memory: Memory) => {
+    setMemoryForm({
+      title: memory.title,
+      description: memory.description,
+      emoji: memory.emoji,
+      gradient: memory.gradient,
+      displayOrder: memory.display_order,
+    })
+    setEditingMemory(memory)
+    setShowMemoryForm(true)
+  }
+
+  const handleDeleteMemory = async (memoryId: number) => {
+    if (confirm("Are you sure you want to delete this memory? This action cannot be undone.")) {
+      try {
+        const result = await deleteMemoryAction(memoryId)
+        if (result.success) {
+          setMessage({ type: "success", text: result.message })
+          await loadData()
+        } else {
+          setMessage({ type: "error", text: result.message })
+        }
+      } catch (error) {
+        setMessage({ type: "error", text: "Failed to delete memory" })
       }
     }
   }
@@ -480,83 +590,113 @@ export default function AdminPage() {
             <Users className="h-4 w-4 mr-2" />
             Squad Members ({members.length})
           </Button>
+          <Button
+            onClick={() => setActiveTab("memories")}
+            variant={activeTab === "memories" ? "default" : "outline"}
+            className={activeTab === "memories" ? "bg-gradient-to-r from-green-500 to-teal-500" : ""}
+          >
+            <Star className="h-4 w-4 mr-2" />
+            Squad Memories ({memories.length})
+          </Button>
         </div>
 
-        {/* Members Tab Content */}
-        {activeTab === "members" && (
+        {/* Memories Tab Content */}
+        {activeTab === "memories" && (
           <div className="space-y-6">
-            {/* Add Member Button */}
+            {/* Add Memory Button */}
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-800">Squad Members</h2>
+              <h2 className="text-2xl font-bold text-gray-800">Squad Memories</h2>
               <Button
                 onClick={() => {
-                  resetMemberForm()
-                  setShowMemberForm(true)
+                  resetMemoryForm()
+                  setShowMemoryForm(true)
                 }}
-                className="bg-gradient-to-r from-blue-500 to-cyan-500"
+                className="bg-gradient-to-r from-green-500 to-teal-500"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Add Member
+                Add Memory
               </Button>
             </div>
 
-            {/* Member Form */}
-            {showMemberForm && (
+            {/* Memory Form */}
+            {showMemoryForm && (
               <Card className="bg-white/90 backdrop-blur-sm">
                 <CardHeader>
-                  <CardTitle>{editingMember ? "Edit Member" : "Add New Member"}</CardTitle>
+                  <CardTitle>{editingMemory ? "Edit Memory" : "Add New Memory"}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={handleMemberSubmit} className="space-y-4">
+                  <form onSubmit={handleMemorySubmit} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium mb-2">
-                          Name <span className="text-red-500">*</span>
+                          Title <span className="text-red-500">*</span>
                         </label>
                         <Input
-                          value={memberForm.name}
-                          onChange={(e) => setMemberForm({ ...memberForm, name: e.target.value })}
-                          placeholder="Enter full name"
+                          value={memoryForm.title}
+                          onChange={(e) => setMemoryForm({ ...memoryForm, title: e.target.value })}
+                          placeholder="Enter memory title"
                           required
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium mb-2">Nickname</label>
+                        <label className="block text-sm font-medium mb-2">
+                          Emoji <span className="text-red-500">*</span>
+                        </label>
                         <Input
-                          value={memberForm.nickname}
-                          onChange={(e) => setMemberForm({ ...memberForm, nickname: e.target.value })}
-                          placeholder="Enter nickname (optional)"
+                          value={memoryForm.emoji}
+                          onChange={(e) => setMemoryForm({ ...memoryForm, emoji: e.target.value })}
+                          placeholder="🎉"
+                          required
                         />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-2">Role</label>
-                      <select
-                        value={memberForm.role}
-                        onChange={(e) => setMemberForm({ ...memberForm, role: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      >
-                        <option value="Member">Member</option>
-                        <option value="Admin">Admin</option>
-                        <option value="Moderator">Moderator</option>
-                        <option value="Photographer">Photographer</option>
-                        <option value="DJ">DJ</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Bio</label>
+                      <label className="block text-sm font-medium mb-2">
+                        Description <span className="text-red-500">*</span>
+                      </label>
                       <Textarea
-                        value={memberForm.bio}
-                        onChange={(e) => setMemberForm({ ...memberForm, bio: e.target.value })}
-                        placeholder="Tell us about this squad member..."
+                        value={memoryForm.description}
+                        onChange={(e) => setMemoryForm({ ...memoryForm, description: e.target.value })}
+                        placeholder="Describe this amazing memory..."
                         rows={3}
+                        required
                       />
                     </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Gradient Colors</label>
+                        <select
+                          value={memoryForm.gradient}
+                          onChange={(e) => setMemoryForm({ ...memoryForm, gradient: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        >
+                          <option value="from-blue-400 to-cyan-500">Blue to Cyan</option>
+                          <option value="from-indigo-400 to-blue-500">Indigo to Blue</option>
+                          <option value="from-cyan-400 to-teal-500">Cyan to Teal</option>
+                          <option value="from-purple-400 to-pink-500">Purple to Pink</option>
+                          <option value="from-green-400 to-blue-500">Green to Blue</option>
+                          <option value="from-yellow-400 to-orange-500">Yellow to Orange</option>
+                          <option value="from-red-400 to-pink-500">Red to Pink</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Display Order</label>
+                        <Input
+                          type="number"
+                          value={memoryForm.displayOrder}
+                          onChange={(e) =>
+                            setMemoryForm({ ...memoryForm, displayOrder: Number.parseInt(e.target.value) || 0 })
+                          }
+                          placeholder="0"
+                          min="0"
+                        />
+                      </div>
+                    </div>
                     <div className="flex gap-4">
-                      <Button type="submit" disabled={loading} className="bg-gradient-to-r from-blue-500 to-cyan-500">
-                        {loading ? "Saving..." : editingMember ? "Update Member" : "Add Member"}
+                      <Button type="submit" disabled={loading} className="bg-gradient-to-r from-green-500 to-teal-500">
+                        {loading ? "Saving..." : editingMemory ? "Update Memory" : "Add Memory"}
                       </Button>
-                      <Button type="button" variant="outline" onClick={resetMemberForm}>
+                      <Button type="button" variant="outline" onClick={resetMemoryForm}>
                         Cancel
                       </Button>
                     </div>
@@ -565,44 +705,44 @@ export default function AdminPage() {
               </Card>
             )}
 
-            {/* Members List */}
+            {/* Memories List */}
             {loading ? (
               <div className="text-center py-20">
                 <Clock className="h-12 w-12 animate-spin mx-auto text-purple-500 mb-4" />
-                <p className="text-lg text-gray-600">Loading members...</p>
+                <p className="text-lg text-gray-600">Loading memories...</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {members.map((member) => (
-                  <Card key={member.id} className="bg-white/90 backdrop-blur-sm">
+                {memories.map((memory) => (
+                  <Card key={memory.id} className="bg-white/90 backdrop-blur-sm">
                     <CardContent className="p-6">
-                      <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <h3 className="text-xl font-bold text-gray-800">{member.name}</h3>
-                          {member.nickname && <p className="text-gray-600">"{member.nickname}"</p>}
+                      <div className="text-center mb-4">
+                        <div
+                          className={`w-16 h-16 bg-gradient-to-r ${memory.gradient} rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg`}
+                        >
+                          <span className="text-3xl">{memory.emoji}</span>
                         </div>
-                        <Badge variant="secondary">{member.role}</Badge>
+                        <h3 className="text-xl font-bold text-gray-800 mb-2">{memory.title}</h3>
+                        <p className="text-gray-600 text-sm line-clamp-3">{memory.description}</p>
                       </div>
 
-                      {member.bio && <p className="text-gray-600 text-sm mb-4 line-clamp-3">{member.bio}</p>}
-
-                      <div className="text-xs text-gray-500 mb-4">
-                        <p>Joined: {new Date(member.joined_date).toLocaleDateString()}</p>
+                      <div className="text-xs text-gray-500 mb-4 text-center">
+                        <p>Order: {memory.display_order}</p>
                       </div>
 
                       <div className="flex gap-2">
-                        <Button onClick={() => handleEditMember(member)} variant="outline" size="sm" className="flex-1">
+                        <Button onClick={() => handleEditMemory(memory)} variant="outline" size="sm" className="flex-1">
                           <Edit className="h-4 w-4 mr-1" />
                           Edit
                         </Button>
                         <Button
-                          onClick={() => handleDeleteMember(member.id)}
+                          onClick={() => handleDeleteMemory(memory.id)}
                           variant="destructive"
                           size="sm"
                           className="flex-1"
                         >
                           <Trash2 className="h-4 w-4 mr-1" />
-                          Remove
+                          Delete
                         </Button>
                       </div>
                     </CardContent>
@@ -611,20 +751,20 @@ export default function AdminPage() {
               </div>
             )}
 
-            {!loading && members.length === 0 && (
+            {!loading && memories.length === 0 && (
               <div className="text-center py-20">
-                <Users className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-2xl font-bold text-gray-600 mb-2">No Squad Members</h3>
-                <p className="text-gray-500 mb-6">Add your first squad member to get started!</p>
+                <Star className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-2xl font-bold text-gray-600 mb-2">No Squad Memories</h3>
+                <p className="text-gray-500 mb-6">Add your first squad memory to get started!</p>
                 <Button
                   onClick={() => {
-                    resetMemberForm()
-                    setShowMemberForm(true)
+                    resetMemoryForm()
+                    setShowMemoryForm(true)
                   }}
-                  className="bg-gradient-to-r from-blue-500 to-cyan-500"
+                  className="bg-gradient-to-r from-green-500 to-teal-500"
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Add First Member
+                  Add First Memory
                 </Button>
               </div>
             )}
@@ -632,7 +772,7 @@ export default function AdminPage() {
         )}
 
         {/* Other tabs content (photos and songs) */}
-        {activeTab !== "members" && (
+        {activeTab !== "members" && activeTab !== "memories" && (
           <>
             {/* Loading State */}
             {loading ? (

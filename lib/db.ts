@@ -41,6 +41,20 @@ export async function initDatabase() {
       )
     `
 
+    // Create memories table if it doesn't exist
+    await sql`
+      CREATE TABLE IF NOT EXISTS memories (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT NOT NULL,
+        emoji VARCHAR(10) NOT NULL,
+        gradient VARCHAR(100) NOT NULL,
+        display_order INTEGER DEFAULT 0,
+        active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `
+
     // Create photos table if it doesn't exist
     await sql`
       CREATE TABLE IF NOT EXISTS photos (
@@ -377,6 +391,96 @@ export async function getSongByIdFromDB(id: number) {
     return result[0] || null
   } catch (error) {
     console.error("Error fetching song by ID:", error)
+    return null
+  }
+}
+
+// Memory database operations (new)
+export async function getAllMemoriesFromDB() {
+  try {
+    const connection = await ensureConnection()
+    const memories =
+      await connection`SELECT * FROM memories WHERE active = true ORDER BY display_order ASC, created_at DESC`
+    return memories
+  } catch (error) {
+    console.error("Error fetching all memories:", error)
+    return []
+  }
+}
+
+export async function addMemoryToDB(memory: {
+  title: string
+  description: string
+  emoji: string
+  gradient: string
+  display_order?: number
+}) {
+  try {
+    const connection = await ensureConnection()
+    const result = await connection`
+      INSERT INTO memories (title, description, emoji, gradient, display_order)
+      VALUES (${memory.title}, ${memory.description}, ${memory.emoji}, ${memory.gradient}, ${memory.display_order || 0})
+      RETURNING *
+    `
+    return result[0]
+  } catch (error) {
+    console.error("Error adding memory to database:", error)
+    throw error
+  }
+}
+
+export async function updateMemoryInDB(
+  id: number,
+  memory: {
+    title?: string
+    description?: string
+    emoji?: string
+    gradient?: string
+    display_order?: number
+  },
+) {
+  try {
+    const connection = await ensureConnection()
+    const result = await connection`
+      UPDATE memories 
+      SET 
+        title = COALESCE(${memory.title}, title),
+        description = COALESCE(${memory.description}, description),
+        emoji = COALESCE(${memory.emoji}, emoji),
+        gradient = COALESCE(${memory.gradient}, gradient),
+        display_order = COALESCE(${memory.display_order}, display_order)
+      WHERE id = ${id}
+      RETURNING *
+    `
+    return result[0] || null
+  } catch (error) {
+    console.error("Error updating memory:", error)
+    throw error
+  }
+}
+
+export async function deleteMemoryFromDB(id: number) {
+  try {
+    const connection = await ensureConnection()
+    // Soft delete - set active to false instead of actually deleting
+    const result = await connection`
+      UPDATE memories SET active = false WHERE id = ${id}
+      RETURNING *
+    `
+    return result.length > 0
+  } catch (error) {
+    console.error("Error deleting memory:", error)
+    return false
+  }
+}
+
+export async function getMemoryByIdFromDB(id: number) {
+  try {
+    const connection = await ensureConnection()
+    const result = await connection`SELECT * FROM memories WHERE id = ${id} AND active = true`
+    return result[0] || null
+  } catch (error) {
+    console.error("Error fetching memory by ID:", error)
     return null
   }
 }
