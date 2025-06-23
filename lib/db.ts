@@ -138,25 +138,34 @@ export async function addMemberToDB(member: {
   bio?: string
   avatar_url?: string
 }) {
-  try {
-    const connection = await ensureConnection()
-    console.log("💾 Inserting new member:", member)
+  const connection = await ensureConnection()
 
-    const result = await connection`
-      INSERT INTO members (name, nickname, role, bio, avatar_url, active)
-      VALUES (${member.name}, ${member.nickname || ""}, ${member.role || "Member"}, ${member.bio || ""}, ${member.avatar_url || ""}, true)
-      RETURNING *
-    `
+  /* 
+    Up-sert logic:
+      – If the name already exists we “update” the existing row
+        (handy for re-activating a soft-deleted member or editing data)
+      – If it does not exist we insert a brand-new row
+  */
+  const result = await connection`
+    INSERT INTO members (name, nickname, role, bio, avatar_url, active)
+    VALUES (
+      ${member.name},
+      ${member.nickname || ""},
+      ${member.role || "Member"},
+      ${member.bio || ""},
+      ${member.avatar_url || ""},
+      true
+    )
+    ON CONFLICT (name) DO UPDATE
+      SET nickname    = EXCLUDED.nickname,
+          role        = EXCLUDED.role,
+          bio         = EXCLUDED.bio,
+          avatar_url  = EXCLUDED.avatar_url,
+          active      = true
+    RETURNING *
+  `
 
-    console.log("✅ Member inserted successfully:", result[0])
-    return result[0]
-  } catch (error) {
-    console.error("❌ Error adding member to database:", error)
-    if (error instanceof Error && error.message.includes("duplicate key")) {
-      throw new Error(`A member with the name "${member.name}" already exists`)
-    }
-    throw error
-  }
+  return result[0]
 }
 
 export async function updateMemberInDB(
