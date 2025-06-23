@@ -1,0 +1,19 @@
+{
+  "env": {
+    "DATABASE_URL": "postgresql://friend_owner:npg_FASnNjRyx46E@ep-dry-meadow-a8i6bfv7-pooler.eastus2.azure.neon.tech/friend?sslmode=require",
+    "ADMIN_USERNAME": "kimhour",
+    "ADMIN_PASSWORD": "mypassword123",
+    "NEXT_PUBLIC_ADMIN_USERNAME": "kimhour",
+    "NEXT_PUBLIC_ADMIN_PASSWORD": "mypassword123"
+  },
+  "build": {
+    "env": {
+      "DATABASE_URL": "postgresql://friend_owner:npg_FASnNjRyx46E@ep-dry-meadow-a8i6bfv7-pooler.eastus2.azure.neon.tech/friend?sslmode=require"
+    }
+  },
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  }
+}

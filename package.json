@@ -4,7 +4,10 @@
   "private": true,
   "scripts": {
     "build": "next build",
+    "postbuild": "echo 'Build completed successfully!'",
     "db:init": "tsx scripts/setup-database.ts",
+    "deploy:check": "tsx scripts/deployment-checklist.ts",
+    "deploy:setup": "tsx scripts/deploy-setup.ts",
     "dev": "next dev",
     "lint": "next lint",
     "setup-db": "tsx scripts/setup-database.ts",
