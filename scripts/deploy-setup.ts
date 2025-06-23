@@ -2,7 +2,7 @@ import { neon } from "@neondatabase/serverless"
 
 async function setupProductionDatabase() {
   try {
-    console.log("🚀 Setting up production database...")
+    console.log("🚀 Setting up production database for deployment...")
 
     // Use the production database URL
     const DATABASE_URL =
@@ -19,7 +19,7 @@ async function setupProductionDatabase() {
     await sql`SELECT 1 as test`
     console.log("✅ Database connection successful!")
 
-    // Create all tables
+    // Create all tables with proper error handling
     console.log("📋 Creating database tables...")
 
     // Members table
@@ -91,11 +91,10 @@ async function setupProductionDatabase() {
     `
     console.log("✅ Memories table created!")
 
-    // Check if members exist
+    // Check if members exist and add default ones
     const memberCount = await sql`SELECT COUNT(*) FROM members`
     console.log(`📊 Current members: ${memberCount[0].count}`)
 
-    // Insert default members if none exist
     if (Number(memberCount[0].count) === 0) {
       console.log("👥 Adding default squad members...")
 
@@ -119,11 +118,10 @@ async function setupProductionDatabase() {
       }
     }
 
-    // Check if memories exist
+    // Check if memories exist and add default ones
     const memoryCount = await sql`SELECT COUNT(*) FROM memories`
     console.log(`📊 Current memories: ${memoryCount[0].count}`)
 
-    // Insert default memories if none exist
     if (Number(memoryCount[0].count) === 0) {
       console.log("🎉 Adding default squad memories...")
 
@@ -160,7 +158,7 @@ async function setupProductionDatabase() {
       }
     }
 
-    // Add some sample photos if none exist
+    // Add sample photos if none exist
     const photoCount = await sql`SELECT COUNT(*) FROM photos`
     console.log(`📊 Current photos: ${photoCount[0].count}`)
 
@@ -188,6 +186,16 @@ async function setupProductionDatabase() {
           image_url: "/placeholder.svg?height=400&width=400",
           approved: true,
         },
+        {
+          title: "Coffee Shop Adventure",
+          description: "We literally stayed for 6 hours and they had to politely ask us to leave",
+          date: "2023-09-10",
+          location: "Central Perk Cafe",
+          uploaded_by: "Somiet",
+          tags: ["Coffee Date", "Chill", "Long Talks"],
+          image_url: "/placeholder.svg?height=400&width=400",
+          approved: false, // This one needs approval
+        },
       ]
 
       for (const photo of samplePhotos) {
@@ -199,7 +207,7 @@ async function setupProductionDatabase() {
       }
     }
 
-    // Add some sample songs if none exist
+    // Add sample songs if none exist
     const songCount = await sql`SELECT COUNT(*) FROM songs`
     console.log(`📊 Current songs: ${songCount[0].count}`)
 
@@ -221,6 +229,20 @@ async function setupProductionDatabase() {
             "We're the squad that never breaks\nThrough all the laughs and all mistakes\nTogether we're unstoppable\nOur friendship is unstoppable",
           approved: true,
         },
+        {
+          title: "Memory Lane",
+          artist: "Nostalgia Crew",
+          youtube_url: "https://www.youtube.com/watch?v=kJQP7kiw5Fk",
+          youtube_id: "kJQP7kiw5Fk",
+          thumbnail_url: "https://img.youtube.com/vi/kJQP7kiw5Fk/maxresdefault.jpg",
+          description: "For all our beautiful memories together",
+          added_by: "Lyheng",
+          tags: ["Memories", "Nostalgia", "Friendship"],
+          mood: "Nostalgic",
+          lyrics:
+            "Walking down our memory lane\nEvery step removes the pain\nOf missing all those golden days\nWhen we were young and free to play",
+          approved: false, // Needs approval
+        },
       ]
 
       for (const song of sampleSongs) {
@@ -239,9 +261,11 @@ async function setupProductionDatabase() {
     console.log(`   - Songs: ${(await sql`SELECT COUNT(*) FROM songs`)[0].count}`)
     console.log(`   - Memories: ${(await sql`SELECT COUNT(*) FROM memories`)[0].count}`)
     console.log("🚀 Your website is ready to deploy!")
+
+    return true
   } catch (error) {
     console.error("❌ Error setting up production database:", error)
-    throw error
+    return false
   }
 }
 
