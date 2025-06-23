@@ -18,11 +18,12 @@ async function ensureDbInitialized() {
       const success = await initDatabase()
       if (success) {
         dbInitialized = true
+        console.log("✅ Database initialized successfully")
       } else {
-        console.warn("Database initialization failed, but continuing...")
+        console.warn("⚠️ Database initialization failed, but continuing...")
       }
     } catch (error) {
-      console.error("Database initialization error:", error)
+      console.error("❌ Database initialization error:", error)
     }
   }
 }
@@ -30,9 +31,11 @@ async function ensureDbInitialized() {
 export async function getAllMembersAction() {
   try {
     await ensureDbInitialized()
-    return await getAllMembersFromDB()
+    const members = await getAllMembersFromDB()
+    console.log(`📊 Retrieved ${members.length} members from database`)
+    return members
   } catch (error) {
-    console.error("Error getting all members:", error)
+    console.error("❌ Error getting all members:", error)
     return []
   }
 }
@@ -46,8 +49,10 @@ export async function addMemberAction(formData: FormData) {
     const role = formData.get("role") as string
     const bio = formData.get("bio") as string
 
+    console.log("📝 Adding member with data:", { name, nickname, role, bio })
+
     // Validate required fields
-    if (!name) {
+    if (!name || name.trim() === "") {
       throw new Error("Name is required")
     }
 
@@ -59,22 +64,27 @@ export async function addMemberAction(formData: FormData) {
       bio: bio?.trim() || "",
     }
 
+    console.log("💾 Saving member to database:", newMember)
+
     // Add to database
     const savedMember = await addMemberToDB(newMember)
+    console.log("✅ Member saved successfully:", savedMember)
 
-    // Revalidate all relevant pages
-    revalidatePath("/admin")
-    revalidatePath("/our-pictures")
-    revalidatePath("/songs")
-    revalidatePath("/")
+    // Force revalidation of all relevant pages
+    revalidatePath("/admin", "page")
+    revalidatePath("/our-pictures", "page")
+    revalidatePath("/songs", "page")
+    revalidatePath("/", "page")
+    revalidatePath("/api/members", "page")
 
     return {
       success: true,
-      message: "Member added successfully!",
+      message: `Member "${name}" added successfully!`,
       memberId: savedMember.id,
+      member: savedMember,
     }
   } catch (error) {
-    console.error("Add member failed:", error)
+    console.error("❌ Add member failed:", error)
     return {
       success: false,
       message: error instanceof Error ? error.message : "Failed to add member",
@@ -91,8 +101,10 @@ export async function updateMemberAction(id: number, formData: FormData) {
     const role = formData.get("role") as string
     const bio = formData.get("bio") as string
 
+    console.log(`📝 Updating member ${id} with data:`, { name, nickname, role, bio })
+
     // Validate required fields
-    if (!name) {
+    if (!name || name.trim() === "") {
       throw new Error("Name is required")
     }
 
@@ -111,18 +123,22 @@ export async function updateMemberAction(id: number, formData: FormData) {
       throw new Error("Member not found")
     }
 
-    // Revalidate all relevant pages
-    revalidatePath("/admin")
-    revalidatePath("/our-pictures")
-    revalidatePath("/songs")
-    revalidatePath("/")
+    console.log("✅ Member updated successfully:", updatedMember)
+
+    // Force revalidation of all relevant pages
+    revalidatePath("/admin", "page")
+    revalidatePath("/our-pictures", "page")
+    revalidatePath("/songs", "page")
+    revalidatePath("/", "page")
+    revalidatePath("/api/members", "page")
 
     return {
       success: true,
-      message: "Member updated successfully!",
+      message: `Member "${name}" updated successfully!`,
+      member: updatedMember,
     }
   } catch (error) {
-    console.error("Update member failed:", error)
+    console.error("❌ Update member failed:", error)
     return {
       success: false,
       message: error instanceof Error ? error.message : "Failed to update member",
@@ -133,19 +149,24 @@ export async function updateMemberAction(id: number, formData: FormData) {
 export async function deleteMemberAction(id: number) {
   try {
     await ensureDbInitialized()
+    console.log(`🗑️ Deleting member with ID: ${id}`)
+
     const success = await deleteMemberFromDB(id)
     if (success) {
-      // Revalidate all pages that show members
-      revalidatePath("/admin")
-      revalidatePath("/our-pictures")
-      revalidatePath("/songs")
-      revalidatePath("/")
+      console.log("✅ Member deleted successfully")
+
+      // Force revalidation of all pages that show members
+      revalidatePath("/admin", "page")
+      revalidatePath("/our-pictures", "page")
+      revalidatePath("/songs", "page")
+      revalidatePath("/", "page")
+      revalidatePath("/api/members", "page")
 
       return { success: true, message: "Member removed successfully!" }
     }
     return { success: false, message: "Member not found" }
   } catch (error) {
-    console.error("Error deleting member:", error)
+    console.error("❌ Error deleting member:", error)
     return { success: false, message: "Failed to remove member" }
   }
 }
@@ -153,9 +174,11 @@ export async function deleteMemberAction(id: number) {
 export async function getMemberByIdAction(id: number) {
   try {
     await ensureDbInitialized()
-    return await getMemberByIdFromDB(id)
+    const member = await getMemberByIdFromDB(id)
+    console.log(`📋 Retrieved member ${id}:`, member)
+    return member
   } catch (error) {
-    console.error("Error getting member by ID:", error)
+    console.error("❌ Error getting member by ID:", error)
     return null
   }
 }

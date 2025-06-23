@@ -6,12 +6,13 @@ let sql: any = null
 function createConnection() {
   try {
     if (!process.env.DATABASE_URL) {
-      console.error("DATABASE_URL environment variable is not set")
+      console.error("❌ DATABASE_URL environment variable is not set")
       return null
     }
+    console.log("🔌 Creating database connection...")
     return neon(process.env.DATABASE_URL)
   } catch (error) {
-    console.error("Failed to create database connection:", error)
+    console.error("❌ Failed to create database connection:", error)
     return null
   }
 }
@@ -26,11 +27,13 @@ export async function initDatabase() {
       }
     }
 
+    console.log("🚀 Initializing database tables...")
+
     // Create members table if it doesn't exist
     await sql`
       CREATE TABLE IF NOT EXISTS members (
         id SERIAL PRIMARY KEY,
-        name VARCHAR(100) NOT NULL UNIQUE,
+        name VARCHAR(100) NOT NULL,
         nickname VARCHAR(100),
         role VARCHAR(100) DEFAULT 'Member',
         joined_date DATE DEFAULT CURRENT_DATE,
@@ -40,6 +43,7 @@ export async function initDatabase() {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       )
     `
+    console.log("✅ Members table ready")
 
     // Create memories table if it doesn't exist
     await sql`
@@ -54,6 +58,7 @@ export async function initDatabase() {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       )
     `
+    console.log("✅ Memories table ready")
 
     // Create photos table if it doesn't exist
     await sql`
@@ -70,6 +75,7 @@ export async function initDatabase() {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       )
     `
+    console.log("✅ Photos table ready")
 
     // Create songs table if it doesn't exist
     await sql`
@@ -90,11 +96,12 @@ export async function initDatabase() {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       )
     `
+    console.log("✅ Songs table ready")
 
-    console.log("Database initialized successfully")
+    console.log("🎉 Database initialized successfully")
     return true
   } catch (error) {
-    console.error("Failed to initialize database:", error)
+    console.error("❌ Failed to initialize database:", error)
     return false
   }
 }
@@ -110,14 +117,16 @@ async function ensureConnection() {
   return sql
 }
 
-// Member database operations (new)
+// Member database operations
 export async function getAllMembersFromDB() {
   try {
     const connection = await ensureConnection()
+    console.log("📋 Fetching all active members...")
     const members = await connection`SELECT * FROM members WHERE active = true ORDER BY name ASC`
+    console.log(`✅ Found ${members.length} active members`)
     return members
   } catch (error) {
-    console.error("Error fetching all members:", error)
+    console.error("❌ Error fetching all members:", error)
     return []
   }
 }
@@ -131,14 +140,21 @@ export async function addMemberToDB(member: {
 }) {
   try {
     const connection = await ensureConnection()
+    console.log("💾 Inserting new member:", member)
+
     const result = await connection`
-      INSERT INTO members (name, nickname, role, bio, avatar_url)
-      VALUES (${member.name}, ${member.nickname || ""}, ${member.role || "Member"}, ${member.bio || ""}, ${member.avatar_url || ""})
+      INSERT INTO members (name, nickname, role, bio, avatar_url, active)
+      VALUES (${member.name}, ${member.nickname || ""}, ${member.role || "Member"}, ${member.bio || ""}, ${member.avatar_url || ""}, true)
       RETURNING *
     `
+
+    console.log("✅ Member inserted successfully:", result[0])
     return result[0]
   } catch (error) {
-    console.error("Error adding member to database:", error)
+    console.error("❌ Error adding member to database:", error)
+    if (error instanceof Error && error.message.includes("duplicate key")) {
+      throw new Error(`A member with the name "${member.name}" already exists`)
+    }
     throw error
   }
 }
@@ -155,6 +171,8 @@ export async function updateMemberInDB(
 ) {
   try {
     const connection = await ensureConnection()
+    console.log(`💾 Updating member ${id}:`, member)
+
     const result = await connection`
       UPDATE members 
       SET 
@@ -163,12 +181,14 @@ export async function updateMemberInDB(
         role = COALESCE(${member.role}, role),
         bio = COALESCE(${member.bio}, bio),
         avatar_url = COALESCE(${member.avatar_url}, avatar_url)
-      WHERE id = ${id}
+      WHERE id = ${id} AND active = true
       RETURNING *
     `
+
+    console.log("✅ Member updated successfully:", result[0])
     return result[0] || null
   } catch (error) {
-    console.error("Error updating member:", error)
+    console.error("❌ Error updating member:", error)
     throw error
   }
 }
@@ -176,14 +196,18 @@ export async function updateMemberInDB(
 export async function deleteMemberFromDB(id: number) {
   try {
     const connection = await ensureConnection()
+    console.log(`🗑️ Soft deleting member ${id}`)
+
     // Soft delete - set active to false instead of actually deleting
     const result = await connection`
       UPDATE members SET active = false WHERE id = ${id}
       RETURNING *
     `
+
+    console.log("✅ Member soft deleted:", result[0])
     return result.length > 0
   } catch (error) {
-    console.error("Error deleting member:", error)
+    console.error("❌ Error deleting member:", error)
     return false
   }
 }
@@ -194,19 +218,19 @@ export async function getMemberByIdFromDB(id: number) {
     const result = await connection`SELECT * FROM members WHERE id = ${id} AND active = true`
     return result[0] || null
   } catch (error) {
-    console.error("Error fetching member by ID:", error)
+    console.error("❌ Error fetching member by ID:", error)
     return null
   }
 }
 
-// Photo database operations (existing)
+// Photo database operations
 export async function getAllPhotosFromDB() {
   try {
     const connection = await ensureConnection()
     const photos = await connection`SELECT * FROM photos ORDER BY created_at DESC`
     return photos
   } catch (error) {
-    console.error("Error fetching all photos:", error)
+    console.error("❌ Error fetching all photos:", error)
     return []
   }
 }
@@ -217,7 +241,7 @@ export async function getApprovedPhotosFromDB() {
     const photos = await connection`SELECT * FROM photos WHERE approved = true ORDER BY created_at DESC`
     return photos
   } catch (error) {
-    console.error("Error fetching approved photos:", error)
+    console.error("❌ Error fetching approved photos:", error)
     return []
   }
 }
@@ -228,7 +252,7 @@ export async function getPendingPhotosFromDB() {
     const photos = await connection`SELECT * FROM photos WHERE approved = false ORDER BY created_at DESC`
     return photos
   } catch (error) {
-    console.error("Error fetching pending photos:", error)
+    console.error("❌ Error fetching pending photos:", error)
     return []
   }
 }
@@ -251,7 +275,7 @@ export async function addPhotoToDB(photo: {
     `
     return result[0]
   } catch (error) {
-    console.error("Error adding photo to database:", error)
+    console.error("❌ Error adding photo to database:", error)
     throw error
   }
 }
@@ -265,7 +289,7 @@ export async function approvePhotoInDB(id: number) {
     `
     return result.length > 0
   } catch (error) {
-    console.error("Error approving photo:", error)
+    console.error("❌ Error approving photo:", error)
     return false
   }
 }
@@ -279,7 +303,7 @@ export async function deletePhotoFromDB(id: number) {
     `
     return result.length > 0
   } catch (error) {
-    console.error("Error deleting photo:", error)
+    console.error("❌ Error deleting photo:", error)
     return false
   }
 }
@@ -290,19 +314,19 @@ export async function getPhotoByIdFromDB(id: number) {
     const result = await connection`SELECT * FROM photos WHERE id = ${id}`
     return result[0] || null
   } catch (error) {
-    console.error("Error fetching photo by ID:", error)
+    console.error("❌ Error fetching photo by ID:", error)
     return null
   }
 }
 
-// Song database operations (existing)
+// Song database operations
 export async function getAllSongsFromDB() {
   try {
     const connection = await ensureConnection()
     const songs = await connection`SELECT * FROM songs ORDER BY created_at DESC`
     return songs
   } catch (error) {
-    console.error("Error fetching all songs:", error)
+    console.error("❌ Error fetching all songs:", error)
     return []
   }
 }
@@ -313,7 +337,7 @@ export async function getApprovedSongsFromDB() {
     const songs = await connection`SELECT * FROM songs WHERE approved = true ORDER BY created_at DESC`
     return songs
   } catch (error) {
-    console.error("Error fetching approved songs:", error)
+    console.error("❌ Error fetching approved songs:", error)
     return []
   }
 }
@@ -324,7 +348,7 @@ export async function getPendingSongsFromDB() {
     const songs = await connection`SELECT * FROM songs WHERE approved = false ORDER BY created_at DESC`
     return songs
   } catch (error) {
-    console.error("Error fetching pending songs:", error)
+    console.error("❌ Error fetching pending songs:", error)
     return []
   }
 }
@@ -351,7 +375,7 @@ export async function addSongToDB(song: {
     `
     return result[0]
   } catch (error) {
-    console.error("Error adding song to database:", error)
+    console.error("❌ Error adding song to database:", error)
     throw error
   }
 }
@@ -365,7 +389,7 @@ export async function approveSongInDB(id: number) {
     `
     return result.length > 0
   } catch (error) {
-    console.error("Error approving song:", error)
+    console.error("❌ Error approving song:", error)
     return false
   }
 }
@@ -379,7 +403,7 @@ export async function deleteSongFromDB(id: number) {
     `
     return result.length > 0
   } catch (error) {
-    console.error("Error deleting song:", error)
+    console.error("❌ Error deleting song:", error)
     return false
   }
 }
@@ -390,12 +414,12 @@ export async function getSongByIdFromDB(id: number) {
     const result = await connection`SELECT * FROM songs WHERE id = ${id}`
     return result[0] || null
   } catch (error) {
-    console.error("Error fetching song by ID:", error)
+    console.error("❌ Error fetching song by ID:", error)
     return null
   }
 }
 
-// Memory database operations (new)
+// Memory database operations
 export async function getAllMemoriesFromDB() {
   try {
     const connection = await ensureConnection()
@@ -403,7 +427,7 @@ export async function getAllMemoriesFromDB() {
       await connection`SELECT * FROM memories WHERE active = true ORDER BY display_order ASC, created_at DESC`
     return memories
   } catch (error) {
-    console.error("Error fetching all memories:", error)
+    console.error("❌ Error fetching all memories:", error)
     return []
   }
 }
@@ -424,7 +448,7 @@ export async function addMemoryToDB(memory: {
     `
     return result[0]
   } catch (error) {
-    console.error("Error adding memory to database:", error)
+    console.error("❌ Error adding memory to database:", error)
     throw error
   }
 }
@@ -454,7 +478,7 @@ export async function updateMemoryInDB(
     `
     return result[0] || null
   } catch (error) {
-    console.error("Error updating memory:", error)
+    console.error("❌ Error updating memory:", error)
     throw error
   }
 }
@@ -469,7 +493,7 @@ export async function deleteMemoryFromDB(id: number) {
     `
     return result.length > 0
   } catch (error) {
-    console.error("Error deleting memory:", error)
+    console.error("❌ Error deleting memory:", error)
     return false
   }
 }
@@ -480,7 +504,7 @@ export async function getMemoryByIdFromDB(id: number) {
     const result = await connection`SELECT * FROM memories WHERE id = ${id} AND active = true`
     return result[0] || null
   } catch (error) {
-    console.error("Error fetching memory by ID:", error)
+    console.error("❌ Error fetching memory by ID:", error)
     return null
   }
 }
