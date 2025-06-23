@@ -4,14 +4,14 @@ async function setupProductionDatabase() {
   try {
     console.log("🚀 Setting up production database for deployment...")
 
-    // Use the production database URL
-    const DATABASE_URL =
-      "postgresql://friend_owner:npg_FASnNjRyx46E@ep-dry-meadow-a8i6bfv7-pooler.eastus2.azure.neon.tech/friend?sslmode=require"
+    // Use environment variable - this will be set in Vercel dashboard
+    const DATABASE_URL = process.env.DATABASE_URL
 
     if (!DATABASE_URL) {
-      throw new Error("DATABASE_URL is not configured")
+      throw new Error("DATABASE_URL environment variable is not set. Please configure it in Vercel dashboard.")
     }
 
+    console.log("🔌 Connecting to database...")
     const sql = neon(DATABASE_URL)
 
     // Test connection
@@ -22,7 +22,7 @@ async function setupProductionDatabase() {
     // Create all tables with proper error handling
     console.log("📋 Creating database tables...")
 
-    // Members table
+    // Members table with UNIQUE constraint
     await sql`
       CREATE TABLE IF NOT EXISTS members (
         id SERIAL PRIMARY KEY,
@@ -110,11 +110,16 @@ async function setupProductionDatabase() {
       ]
 
       for (const member of defaultMembers) {
-        await sql`
-          INSERT INTO members (name, nickname, role, bio, active)
-          VALUES (${member.name}, ${member.nickname}, ${member.role}, ${member.bio}, true)
-        `
-        console.log(`✅ Added member: ${member.name}`)
+        try {
+          await sql`
+            INSERT INTO members (name, nickname, role, bio, active)
+            VALUES (${member.name}, ${member.nickname}, ${member.role}, ${member.bio}, true)
+            ON CONFLICT (name) DO NOTHING
+          `
+          console.log(`✅ Added member: ${member.name}`)
+        } catch (error) {
+          console.log(`⚠️ Member ${member.name} might already exist, skipping...`)
+        }
       }
     }
 
@@ -194,7 +199,7 @@ async function setupProductionDatabase() {
           uploaded_by: "Somiet",
           tags: ["Coffee Date", "Chill", "Long Talks"],
           image_url: "/placeholder.svg?height=400&width=400",
-          approved: false, // This one needs approval
+          approved: false,
         },
       ]
 
@@ -241,7 +246,7 @@ async function setupProductionDatabase() {
           mood: "Nostalgic",
           lyrics:
             "Walking down our memory lane\nEvery step removes the pain\nOf missing all those golden days\nWhen we were young and free to play",
-          approved: false, // Needs approval
+          approved: false,
         },
       ]
 
